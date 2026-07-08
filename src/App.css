@@ -1,0 +1,6 @@
+/* Cleaned up App layout rules */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
