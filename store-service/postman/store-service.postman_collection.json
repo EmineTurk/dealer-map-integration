@@ -1,0 +1,63 @@
+{
+  "info": {
+    "name": "store-service",
+    "description": "Day 2 — store-service in-memory endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/actuator/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["actuator", "health"]
+        }
+      }
+    },
+    {
+      "name": "Get All Stores",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/stores",
+          "host": ["{{baseUrl}}"],
+          "path": ["stores"]
+        }
+      }
+    },
+    {
+      "name": "Get Store By Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/stores/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["stores", "1"]
+        }
+      }
+    },
+    {
+      "name": "Get Store By Id - Not Found",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/stores/999",
+          "host": ["{{baseUrl}}"],
+          "path": ["stores", "999"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081"
+    }
+  ]
+}
