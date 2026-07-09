@@ -18,3 +18,4 @@ dealer-map-integration
 ├── capability-service
 ├── frontend
 └── docs
+```
