@@ -17,6 +17,8 @@ dealer-map-integration
 ├── capability-service
 ├── frontend
 └── docs
+```
+---
 
 ## Teknoloji Yığını
 
@@ -34,7 +36,7 @@ dealer-map-integration
 | Harita Kütüphanesi | `@vis.gl/react-google-maps` (Google Maps)                                                              |
 | State Yönetimi     | Local state (useState + props). **Stretch Goal:** TanStack Query                                       |
 
-```
+
 ---
 ## Hedef Mimari
 ### Mimari Şema
