@@ -44,7 +44,7 @@ GET http://localhost:8081/stores
 GET http://localhost:8081/stores/1
 ```
 
-Örnek response:
+Example response (API contract `Store`):
 
 ```json
 {
@@ -55,9 +55,19 @@ GET http://localhost:8081/stores/1
   "district": "Kadikoy",
   "latitude": 40.9901,
   "longitude": 29.0253,
-  "type": "TIM"
+  "type": "TIM",
+  "phone": "+90 216 555 0101",
+  "workingHours": "09:00 - 21:00"
 }
 ```
+
+404 body (`ApiError`):
+
+```json
+{ "status": 404, "message": "Store not found: id=999", "timestamp": "2026-07-10T08:00:00Z" }
+```
+
+Contract: [`docs/api-contract.md`](../docs/api-contract.md)
 
 ---
 
@@ -89,8 +99,45 @@ Beklenen cevap:
 
 ---
 
-## Sonraki Adımlar (Gün 3+)
+## Gün 3 Durumu
 
-- Oracle + STORE tablosu (Gün 3–4)
+- Oracle Free (`gvenzl/oracle-free:23-slim`) Docker Compose ile ayağa kaldırılır.
+- `STORE` tablosu `store_app` şemasında SQL ile oluşturulur.
+- Script ve bağlantı bilgileri: `sql/` klasörü.
+
+### Oracle'ı başlatma
+
+Proje kökünden (`dealer-map-integration/`):
+
+```bash
+docker compose up -d oracle
+docker compose logs -f oracle
+```
+
+İlk açılış birkaç dakika sürebilir. Healthy olduktan sonra DBeaver:
+
+| Alan | Değer |
+|------|--------|
+| Host | `localhost` |
+| Port | `1521` |
+| Service | `FREEPDB1` |
+| User | `store_app` |
+| Password | `StoreApp123` |
+
+Tablo kontrolü:
+
+```sql
+SELECT table_name FROM user_tables WHERE table_name = 'STORE';
+DESC store;
+```
+
+> Not: Endpoint'ler hâlâ in-memory. Spring Data JPA bağlantısı **Gün 4**.
+
+---
+
+## Sonraki Adımlar (Gün 4+)
+
+- Store entity + repository + `application.yml` Oracle bağlantısı
+- Seed data (15–20 İstanbul bayisi)
 - `GET /stores?ids=1,5,9` — toplu sorgu (diğer servisler için)
 - `GET /stores?city=Istanbul&district=Kadikoy` — bölgesel filtreleme
