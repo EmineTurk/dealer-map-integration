@@ -186,16 +186,16 @@ export const mockStores: Store[] = [
 
 // 2. Mock Products (Pasaj catalog)
 export const mockProducts: Product[] = [
-  { id: 1, name: 'iPhone 15 128GB', sku: 'APL-IPH15-128', category: 'Smartphones' },
-  { id: 2, name: 'iPhone 15 Pro 256GB', sku: 'APL-IPH15P-256', category: 'Smartphones' },
-  { id: 3, name: 'Samsung Galaxy S24 Ultra', sku: 'SAM-S24U-512', category: 'Smartphones' },
-  { id: 4, name: 'Samsung Galaxy A55 128GB', sku: 'SAM-A55-128', category: 'Smartphones' },
-  { id: 5, name: 'AirPods Pro Gen 2', sku: 'APL-APP2', category: 'Accessories' },
-  { id: 6, name: 'Apple Watch Series 9', sku: 'APL-AW9-45', category: 'Smartwatches' },
-  { id: 7, name: 'Samsung Galaxy Watch 6', sku: 'SAM-GW6-44', category: 'Smartwatches' },
-  { id: 8, name: 'Xiaomi Redmi Note 13', sku: 'XIA-RN13-256', category: 'Smartphones' },
-  { id: 9, name: 'Turkcell Superbox Router', sku: 'TKC-SBOX-LTE', category: 'Network' },
-  { id: 10, name: 'Anker PowerCore 20k', sku: 'ANK-PC20', category: 'Accessories' }
+  { id: 1, name: 'iPhone 15 128GB', sku: 'APL-IPH15-128', category: 'Akıllı Telefonlar' },
+  { id: 2, name: 'iPhone 15 Pro 256GB', sku: 'APL-IPH15P-256', category: 'Akıllı Telefonlar' },
+  { id: 3, name: 'Samsung Galaxy S24 Ultra', sku: 'SAM-S24U-512', category: 'Akıllı Telefonlar' },
+  { id: 4, name: 'Samsung Galaxy A55 128GB', sku: 'SAM-A55-128', category: 'Akıllı Telefonlar' },
+  { id: 5, name: 'AirPods Pro Gen 2', sku: 'APL-APP2', category: 'Aksesuarlar' },
+  { id: 6, name: 'Apple Watch Series 9', sku: 'APL-AW9-45', category: 'Akıllı Saatler' },
+  { id: 7, name: 'Samsung Galaxy Watch 6', sku: 'SAM-GW6-44', category: 'Akıllı Saatler' },
+  { id: 8, name: 'Xiaomi Redmi Note 13', sku: 'XIA-RN13-256', category: 'Akıllı Telefonlar' },
+  { id: 9, name: 'Turkcell Superbox Router', sku: 'TKC-SBOX-LTE', category: 'Ağ ve İnternet' },
+  { id: 10, name: 'Anker PowerCore 20k', sku: 'ANK-PC20', category: 'Aksesuarlar' }
 ];
 
 // 3. Mock Stock levels mapping: key: productId-storeId, value: quantity

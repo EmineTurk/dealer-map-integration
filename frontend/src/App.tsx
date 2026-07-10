@@ -3,6 +3,7 @@ import { Navbar } from './components/Navbar';
 import { Home } from './pages/Home';
 import { Pasaj } from './pages/Pasaj';
 import { Transactions } from './pages/Transactions';
+import 'leaflet/dist/leaflet.css';
 import './App.css';
 
 function App() {

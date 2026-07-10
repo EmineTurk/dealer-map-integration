@@ -9,7 +9,7 @@ export const Navbar: React.FC = () => {
         <NavLink to="/" className="navbar-brand">
           <span className="brand-turkcell">TURKCELL</span>
           <span className="brand-divider">/</span>
-          <span className="brand-portal">Dealer Portal</span>
+          <span className="brand-portal">Bayi Portalı</span>
         </NavLink>
 
         <nav className="navbar-links">
@@ -17,25 +17,25 @@ export const Navbar: React.FC = () => {
             to="/" 
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
-            Dashboard
+            Kontrol Paneli
           </NavLink>
           <NavLink 
             to="/pasaj" 
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
-            Pasaj (Stocks)
+            Pasaj (Stoklar)
           </NavLink>
           <NavLink 
             to="/transactions" 
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
-            com.tr (Transactions)
+            com.tr (İşlemler)
           </NavLink>
         </nav>
 
         <div className="navbar-status">
           <span className="status-dot"></span>
-          <span className="status-label">Mock API Active</span>
+          <span className="status-label">Simüle API Aktif</span>
         </div>
       </div>
     </header>

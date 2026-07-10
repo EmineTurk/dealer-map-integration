@@ -1,14 +1,13 @@
-# Dealer Map Integration
+# Bayi Harita Entegrasyonu
 
-This project is developed for Turkcell dealer map integration.
+## Proje Özeti
 
-The main goal is to show users the nearest suitable dealers on a map.
+İki ayrı ürün, tek ortak altyapı mantığı:
 
-## Main Scenarios
-
-- **Pasaj — Nearby Stock:** Users can see which dealers have the selected product in stock.
-- **turkcell.com.tr — Nearby Service:** Users can see the nearest dealers that can perform the selected operation.
-
+- **Pasaj - "Yakınımda Stokta":** Kullanıcı bir ürünün hangi bayide stokta olduğunu harita üzerinde görür. (Backend Stajyer A)
+- **turkcell.com.tr - "Yakınımda İşlem":** Kullanıcı yapmak istediği işlemi (yeni hat, cihaz teslim, numara taşıma vb.) seçer, o işlemi yapabilen en yakın bayiyi haritada görür. (Backend Stajyer B)
+- **Frontend:** Her iki modülü de içeren tek bir React uygulaması. (Frontend Stajyer)
+--- 
 ## Project Structure
 
 ```txt

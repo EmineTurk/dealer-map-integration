@@ -411,3 +411,74 @@
     height: 400px;
   }
 }
+
+/* Ant Design Select Dropdown Styling Overrides */
+.ant-select-dropdown {
+  background-color: #1a1f2e !important; /* Neutral dark grey, not dark blue/lacivert */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.ant-select-item {
+  color: #e5e7eb !important; /* Bright light-grey text */
+  font-weight: 500 !important;
+}
+
+.ant-select-item-option-active {
+  background-color: rgba(255, 255, 255, 0.08) !important; /* Hover effect */
+  color: #ffffff !important;
+}
+
+.ant-select-item-option-selected {
+  background-color: rgb(51, 84, 166) !important; /* Brand color selected state */
+  color: #ffffff !important;
+}
+
+/* Make sure the text color is bright and visible inside Select container */
+.ant-select-single .ant-select-selector {
+  color: #ffffff !important;
+}
+
+/* Ant Design Drawer Styling Overrides */
+.ant-drawer-content {
+  background-color: #0b0f19 !important; /* Premium dark background */
+  color: #f3f4f6 !important;
+}
+
+.ant-drawer-header {
+  background-color: #060913 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.ant-drawer-title {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+}
+
+.ant-drawer-close {
+  color: #9ca3af !important;
+}
+
+.ant-drawer-close:hover {
+  color: #ffffff !important;
+}
+
+.drawer-detail-section {
+  margin-bottom: 1.5rem;
+}
+
+.drawer-detail-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+.drawer-detail-value {
+  font-size: 0.9rem;
+  color: #f3f4f6;
+  line-height: 1.5;
+}
