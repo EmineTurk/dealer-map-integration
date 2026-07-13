@@ -1,4 +1,4 @@
-package com.turkcell.stock_service.presentation;
+package com.turkcell.stock_service.presentation.controller;
 
 import com.turkcell.stock_service.application.ProductService;
 import com.turkcell.stock_service.presentation.dto.ProductResponse;
