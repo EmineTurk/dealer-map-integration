@@ -1,36 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Select, Card, Tag, Badge, Empty, Drawer } from 'antd';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import { Select, Tag, Badge, Empty } from 'antd';
 import { mockProducts, mockStores, mockStocks } from '../mocks/mockData';
-import type { StockLevel } from '../types/api';
+import { StoreCard } from '../components/StoreCard';
+import { StoreMap } from '../components/StoreMap';
+import { StoreDetailsDrawer } from '../components/StoreDetailsDrawer';
+import type { Store, StockLevel } from '../types/api';
 import './Pages.css';
-
-// Custom Leaflet pin styled in brand color rgb(51, 84, 166)
-const pasajMapIcon = L.divIcon({
-  html: `<div style="
-    background-color: rgb(51, 84, 166);
-    width: 20px;
-    height: 20px;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    border: 2px solid white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-  "></div>`,
-  className: 'custom-pasaj-pin',
-  iconSize: [20, 20],
-  iconAnchor: [10, 20]
-});
-
-// Helper component to recenter the Leaflet map dynamically
-const RecenterMap: React.FC<{ center: { lat: number; lng: number }; zoom: number }> = ({ center, zoom }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView([center.lat, center.lng], zoom, { animate: true });
-  }, [center, zoom, map]);
-  return null;
-};
 
 const getProductBrand = (name: string): string => {
   const lower = name.toLowerCase();
@@ -52,6 +28,9 @@ export const Pasaj: React.FC = () => {
 
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedBrand, setSelectedBrand] = useState<string>('ALL');
+
+  // Simulated latency for Drawer details
+  const [isDrawerLoading, setIsDrawerLoading] = useState(false);
 
   // Derive list of categories and brands dynamically
   const categories = ['ALL', ...Array.from(new Set(mockProducts.map(p => p.category)))];
@@ -113,6 +92,23 @@ export const Pasaj: React.FC = () => {
     }
   }, [selectedProductId]);
 
+  // Simulate loading state whenever a store details panel opens
+  useEffect(() => {
+    if (selectedStoreId) {
+      setIsDrawerLoading(true);
+      const timer = setTimeout(() => {
+        setIsDrawerLoading(false);
+      }, 600); // 600ms latency simulation
+      return () => clearTimeout(timer);
+    }
+  }, [selectedStoreId]);
+
+  const handleStoreSelect = (store: Store & { distance: number }) => {
+    setSelectedStoreId(store.id);
+    setMapCenter({ lat: store.latitude, lng: store.longitude });
+    setZoomLevel(17);
+  };
+
   const getStockTagColor = (level: StockLevel) => {
     switch (level) {
       case 'IN_STOCK': return 'success';
@@ -130,6 +126,33 @@ export const Pasaj: React.FC = () => {
       default: return 'Bilinmiyor';
     }
   };
+
+  const pasajExtraDetail = selectedStore && (
+    <div className="drawer-detail-section" style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.5rem' }}>
+      <div className="drawer-detail-label">Mevcut Stok Durumu</div>
+      <div 
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.75rem',
+          marginTop: '0.5rem'
+        }}
+      >
+        <div 
+          style={{ 
+            fontSize: '1.75rem', 
+            fontWeight: 800, 
+            color: selectedStore.stockLevel === 'IN_STOCK' ? 'var(--color-success)' : 'var(--color-warning)'
+          }}
+        >
+          {selectedStore.quantity} Adet
+        </div>
+        <Tag color={selectedStore.stockLevel === 'IN_STOCK' ? 'success' : 'warning'}>
+          {selectedStore.stockLevel === 'IN_STOCK' ? 'Stokta Var' : 'Düşük Stok'}
+        </Tag>
+      </div>
+    </div>
+  );
 
   return (
     <div className="page-container animate-fade-in">
@@ -205,35 +228,24 @@ export const Pasaj: React.FC = () => {
           <div className="card-list">
             {storeStocksList.length > 0 ? (
               storeStocksList.map(item => (
-                <Card 
-                  key={item.id} 
-                  className="list-card glass-panel" 
-                  bodyStyle={{ padding: '0.75rem 1rem' }}
-                  style={{ 
-                    border: item.id === selectedStoreId ? '1px solid var(--turkcell-yellow)' : '1px solid transparent', 
-                    cursor: 'pointer' 
-                  }}
-                  onClick={() => {
-                    setSelectedStoreId(item.id);
-                    setMapCenter({ lat: item.latitude, lng: item.longitude });
-                    setZoomLevel(17);
-                  }}
-                >
-                  <div className="list-card-title">{item.name}</div>
-                  <div className="list-card-subtitle" style={{ marginBottom: '0.5rem' }}>
-                    {item.district}, {item.city} &bull; <strong>{item.distance} km uzakta</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Tag color={getStockTagColor(item.stockLevel)}>
-                      {getStockLabel(item.stockLevel)}
-                    </Tag>
-                    {item.type === 'TIM' ? (
-                      <Badge status="processing" text="TIM" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }} />
-                    ) : (
-                      <Badge status="default" text="Franchise" style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }} />
-                    )}
-                  </div>
-                </Card>
+                <StoreCard
+                  key={item.id}
+                  store={item}
+                  isSelected={item.id === selectedStoreId}
+                  onClick={() => handleStoreSelect(item)}
+                  extra={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Tag color={getStockTagColor(item.stockLevel)}>
+                        {getStockLabel(item.stockLevel)}
+                      </Tag>
+                      {item.type === 'TIM' ? (
+                        <Badge status="processing" text="TIM" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }} />
+                      ) : (
+                        <Badge status="default" text="Franchise" style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }} />
+                      )}
+                    </div>
+                  }
+                />
               ))
             ) : (
               <Empty description="Stokta bu ürünü bulunduran mağaza bulunamadı" image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -243,126 +255,23 @@ export const Pasaj: React.FC = () => {
 
         {/* Map View Area */}
         <main className="locator-main glass-panel" style={{ padding: '0.5rem', overflow: 'hidden', zIndex: 1 }}>
-          <MapContainer
-            center={[mapCenter.lat, mapCenter.lng]}
-            zoom={12}
-            scrollWheelZoom={true}
-            style={{ width: '100%', height: '100%', borderRadius: 'var(--radius-md)' }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <RecenterMap center={mapCenter} zoom={zoomLevel} />
-            {storeStocksList.map(item => (
-              <Marker
-                key={item.id}
-                position={[item.latitude, item.longitude]}
-                icon={pasajMapIcon}
-                eventHandlers={{
-                  click: () => {
-                    setSelectedStoreId(item.id);
-                    setMapCenter({ lat: item.latitude, lng: item.longitude });
-                    setZoomLevel(17);
-                  }
-                }}
-              />
-            ))}
-            {selectedStoreId && (() => {
-              const selectedStore = storeStocksList.find(s => s.id === selectedStoreId);
-              if (!selectedStore) return null;
-              return (
-                <Popup
-                  position={[selectedStore.latitude, selectedStore.longitude]}
-                  eventHandlers={{
-                    remove: () => setSelectedStoreId(undefined)
-                  }}
-                >
-                  <div style={{ color: '#060913', fontFamily: 'sans-serif', fontSize: '0.85rem' }}>
-                    <strong style={{ display: 'block', marginBottom: '0.25rem' }}>{selectedStore.name}</strong>
-                    {selectedStore.address}
-                  </div>
-                </Popup>
-              );
-            })()}
-          </MapContainer>
+          <StoreMap
+            center={mapCenter}
+            zoom={zoomLevel}
+            stores={storeStocksList}
+            selectedStoreId={selectedStoreId}
+            onStoreSelect={handleStoreSelect}
+          />
         </main>
       </div>
-      <Drawer
-        title="Bayi Detay Bilgileri"
-        placement="right"
-        onClose={() => setSelectedStoreId(undefined)}
+
+      <StoreDetailsDrawer
         open={selectedStoreId !== undefined}
-        width={380}
-      >
-        {selectedStore && (
-          <div style={{ padding: '0.5rem 0' }}>
-            <div className="drawer-detail-section" style={{ marginBottom: '2rem' }}>
-              <div 
-                style={{ 
-                  fontSize: '1.25rem', 
-                  fontWeight: 700, 
-                  color: 'var(--turkcell-yellow)',
-                  marginBottom: '0.5rem'
-                }}
-              >
-                {selectedStore.name}
-              </div>
-              <Tag color={selectedStore.type === 'TIM' ? 'blue' : 'cyan'}>
-                {selectedStore.type === 'TIM' ? 'TİM Bayisi' : 'Franchise Acente'}
-              </Tag>
-            </div>
-
-            <div className="drawer-detail-section">
-              <div className="drawer-detail-label">Adres</div>
-              <div className="drawer-detail-value">{selectedStore.address}</div>
-              <div className="drawer-detail-value" style={{ marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
-                {selectedStore.district}, {selectedStore.city}
-              </div>
-            </div>
-
-            <div className="drawer-detail-section">
-              <div className="drawer-detail-label">Telefon</div>
-              <div className="drawer-detail-value">{selectedStore.phone || 'N/A'}</div>
-            </div>
-
-            <div className="drawer-detail-section">
-              <div className="drawer-detail-label">Çalışma Saatleri</div>
-              <div className="drawer-detail-value">⏱️ {selectedStore.workingHours || '09:00 - 20:00'}</div>
-            </div>
-
-            <div className="drawer-detail-section">
-              <div className="drawer-detail-label">Uzaklık</div>
-              <div className="drawer-detail-value">📍 {selectedStore.distance} km uzakta</div>
-            </div>
-
-            <div className="drawer-detail-section" style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.5rem' }}>
-              <div className="drawer-detail-label">Mevcut Stok Durumu</div>
-              <div 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '0.75rem',
-                  marginTop: '0.5rem'
-                }}
-              >
-                <div 
-                  style={{ 
-                    fontSize: '1.75rem', 
-                    fontWeight: 800, 
-                    color: selectedStore.stockLevel === 'IN_STOCK' ? 'var(--color-success)' : 'var(--color-warning)'
-                  }}
-                >
-                  {selectedStore.quantity} Adet
-                </div>
-                <Tag color={selectedStore.stockLevel === 'IN_STOCK' ? 'success' : 'warning'}>
-                  {selectedStore.stockLevel === 'IN_STOCK' ? 'Stokta Var' : 'Düşük Stok'}
-                </Tag>
-              </div>
-            </div>
-          </div>
-        )}
-      </Drawer>
+        onClose={() => setSelectedStoreId(undefined)}
+        store={selectedStore}
+        isLoading={isDrawerLoading}
+        extra={pasajExtraDetail}
+      />
     </div>
   );
 };
