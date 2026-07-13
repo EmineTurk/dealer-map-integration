@@ -2,9 +2,23 @@ spring:
   application:
     name: stock-service
 
+  datasource:
+    url: jdbc:oracle:thin:@//localhost:1521/FREEPDB1
+    username: SYSTEM
+    password: 123456
+    driver-class-name: oracle.jdbc.OracleDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
   autoconfigure:
     exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
 
 server:
