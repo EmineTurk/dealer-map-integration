@@ -1,7 +1,7 @@
 package com.turkcell.stock_service.presentation.controller;
 
-import com.turkcell.stock_service.application.ProductService;
-import com.turkcell.stock_service.presentation.dto.ProductResponse;
+import com.turkcell.stock_service.application.service.ProductService;
+import com.turkcell.stock_service.application.dto.ProductResponse;
 import jakarta.validation.constraints.Positive;
 import org.springframework.validation.annotation.Validated;
 import io.swagger.v3.oas.annotations.Operation;

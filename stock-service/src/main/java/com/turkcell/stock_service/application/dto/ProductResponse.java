@@ -1,4 +1,4 @@
-package com.turkcell.stock_service.presentation.dto;
+package com.turkcell.stock_service.application.dto;
 
 public record ProductResponse(
         Long id,
