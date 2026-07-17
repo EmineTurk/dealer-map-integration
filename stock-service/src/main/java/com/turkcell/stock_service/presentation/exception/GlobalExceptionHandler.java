@@ -1,5 +1,6 @@
 package com.turkcell.stock_service.presentation.exception;
 
+import com.turkcell.stock_service.domain.exception.ProductNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;

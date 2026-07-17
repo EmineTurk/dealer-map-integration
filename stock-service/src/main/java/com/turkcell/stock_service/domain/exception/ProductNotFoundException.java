@@ -1,4 +1,4 @@
-package com.turkcell.stock_service.presentation.exception;
+package com.turkcell.stock_service.domain.exception;
 
 public class ProductNotFoundException extends RuntimeException {
 
