@@ -2,6 +2,7 @@ package com.turkcell.stock_service.presentation.controller;
 
 import com.turkcell.stock_service.application.service.ProductService;
 import com.turkcell.stock_service.application.dto.ProductResponse;
+import com.turkcell.stock_service.application.dto.StockResponse;
 import jakarta.validation.constraints.Positive;
 import org.springframework.validation.annotation.Validated;
 import io.swagger.v3.oas.annotations.Operation;
@@ -54,6 +55,8 @@ public class ProductController {
             summary = "ID ile ürün getirir",
             description = "Verilen ID değerine ait ürünü getirir."
     )
+
+
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -67,13 +70,32 @@ public class ProductController {
                     responseCode = "404",
                     description = "Ürün bulunamadı"
             )
+
     })
     public ProductResponse getProductById(
             @PathVariable
             @Positive(message = "Ürün ID değeri pozitif olmalıdır")
-    Long id
-    ){
+            Long id
+    ) {
 
         return productService.getProductById(id);
+    }
+
+    @GetMapping("/{id}/stores")
+    @Operation(
+            summary = "Ürünün bulunduğu bayileri getirir",
+            description = "Verilen ürün ID değerine ait stok kayıtlarını ve stok seviyelerini listeler."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Stok kayıtları başarıyla getirildi"),
+            @ApiResponse(responseCode = "400", description = "Geçersiz ürün ID değeri"),
+            @ApiResponse(responseCode = "404", description = "Ürün bulunamadı")
+    })
+    public List<StockResponse> getStoresByProductId(
+            @PathVariable
+            @Positive(message = "Ürün ID değeri pozitif olmalıdır")
+            Long id
+    ) {
+        return productService.getStoresByProductId(id);
     }
 }

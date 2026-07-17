@@ -1,6 +1,5 @@
 package com.turkcell.stock_service.application.service;
 
-import com.turkcell.stock_service.application.dto.StockResponse;
 import com.turkcell.stock_service.domain.model.Stock;
 import com.turkcell.stock_service.infrastructure.persistence.StockMapper;
 import com.turkcell.stock_service.infrastructure.persistence.StockRepository;
@@ -12,24 +11,20 @@ import java.util.List;
 public class StockService {
 
     private final StockRepository stockRepository;
+    private final StockMapper stockMapper;
 
-    public StockService(StockRepository stockRepository) {
+    public StockService(
+            StockRepository stockRepository,
+            StockMapper stockMapper
+    ) {
         this.stockRepository = stockRepository;
+        this.stockMapper = stockMapper;
     }
 
-    public List<StockResponse> getStocksByProductId(Long productId) {
+    public List<Stock> getStocksByProductId(Long productId) {
         return stockRepository.findByProductId(productId)
                 .stream()
-                .map(StockMapper::toDomain)
-                .map(this::toResponse)
+                .map(stockMapper::toDomain)
                 .toList();
-    }
-
-    private StockResponse toResponse(Stock stock) {
-        return new StockResponse(
-                stock.getProductId(),
-                stock.getStoreId(),
-                stock.getStockLevel()
-        );
     }
 }

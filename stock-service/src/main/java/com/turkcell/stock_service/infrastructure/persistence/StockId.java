@@ -16,11 +16,32 @@ public class StockId implements Serializable {
         this.storeId = storeId;
     }
 
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
+
+    public Long getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(Long storeId) {
+        this.storeId = storeId;
+    }
+
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof StockId)) return false;
-        StockId stockId = (StockId) o;
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+
+        if (!(object instanceof StockId stockId)) {
+            return false;
+        }
+
         return Objects.equals(productId, stockId.productId)
                 && Objects.equals(storeId, stockId.storeId);
     }

@@ -1,34 +1,26 @@
 package com.turkcell.stock_service.infrastructure.persistence;
 
 import com.turkcell.stock_service.domain.model.Stock;
+import org.springframework.stereotype.Component;
 
-public final class StockMapper {
+@Component
+public class StockMapper {
 
-    private StockMapper() {
-    }
-
-    public static Stock toDomain(StockEntity entity) {
-        if (entity == null) {
-            return null;
-        }
-
+    public Stock toDomain(StockEntity stockEntity) {
         return new Stock(
-                entity.getProductId(),
-                entity.getStoreId(),
-                entity.getQuantity()
+                stockEntity.getProductId(),
+                stockEntity.getStoreId(),
+                stockEntity.getQuantity()
         );
     }
 
-    public static StockEntity toEntity(Stock stock) {
-        if (stock == null) {
-            return null;
-        }
+    public StockEntity toEntity(Stock stock) {
+        StockEntity stockEntity = new StockEntity();
 
-        StockEntity entity = new StockEntity();
-        entity.setProductId(stock.getProductId());
-        entity.setStoreId(stock.getStoreId());
-        entity.setQuantity(stock.getQuantity());
+        stockEntity.setProductId(stock.getProductId());
+        stockEntity.setStoreId(stock.getStoreId());
+        stockEntity.setQuantity(stock.getQuantity());
 
-        return entity;
+        return stockEntity;
     }
 }
