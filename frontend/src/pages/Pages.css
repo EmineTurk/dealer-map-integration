@@ -441,27 +441,27 @@
 
 /* Ant Design Drawer Styling Overrides */
 .ant-drawer-content {
-  background-color: #0b0f19 !important; /* Premium dark background */
-  color: #f3f4f6 !important;
+  background-color: #ffffff !important; /* Premium white background */
+  color: #000000 !important;
 }
 
 .ant-drawer-header {
-  background-color: #060913 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
 .ant-drawer-title {
-  color: #ffffff !important;
+  color: var(--turkcell-blue) !important;
   font-weight: 700 !important;
   font-size: 1.1rem !important;
 }
 
 .ant-drawer-close {
-  color: #9ca3af !important;
+  color: #666666 !important;
 }
 
 .ant-drawer-close:hover {
-  color: #ffffff !important;
+  color: #000000 !important;
 }
 
 .drawer-detail-section {
@@ -471,7 +471,7 @@
 .drawer-detail-label {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: #555555 !important;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.35rem;
@@ -479,6 +479,6 @@
 
 .drawer-detail-value {
   font-size: 0.9rem;
-  color: #f3f4f6;
+  color: #000000 !important;
   line-height: 1.5;
 }

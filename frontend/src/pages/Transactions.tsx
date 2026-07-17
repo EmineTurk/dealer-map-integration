@@ -1,12 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Select, Tag, Empty } from 'antd';
+import { Select, Card, Tag, Empty, Drawer } from 'antd';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 import { mockStores, mockStoreCapabilities } from '../mocks/mockData';
-import { StoreCard } from '../components/StoreCard';
-import { StoreMap } from '../components/StoreMap';
-import { StoreDetailsDrawer } from '../components/StoreDetailsDrawer';
-import type { Store, CapabilityType } from '../types/api';
+import type { CapabilityType } from '../types/api';
 import './Pages.css';
+
+type FormValues = {
+  capabilityType: CapabilityType | '';
+  workingHours: 'ALL' | 'WEEKEND' | 'LATE_CLOSE';
+  storeType: 'ALL' | 'TIM' | 'FRANCHISE';
+};
+
+const schema = yup.object().shape({
+  capabilityType: yup.string().required('Lütfen bir işlem tipi seçiniz.'),
+  workingHours: yup.string().oneOf(['ALL', 'WEEKEND', 'LATE_CLOSE']).default('ALL'),
+  storeType: yup.string().oneOf(['ALL', 'TIM', 'FRANCHISE']).default('ALL')
+});
+
+// Custom Leaflet pin styled in brand color rgb(51, 84, 166)
+const transactionsMapIcon = L.divIcon({
+  html: `<div style="
+    background-color: rgb(51, 84, 166);
+    width: 20px;
+    height: 20px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  "></div>`,
+  className: 'custom-transactions-pin',
+  iconSize: [20, 20],
+  iconAnchor: [10, 20]
+});
+
+// Helper component to recenter the Leaflet map dynamically
+const RecenterMap: React.FC<{ center: { lat: number; lng: number }; zoom: number }> = ({ center, zoom }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([center.lat, center.lng], zoom, { animate: true });
+  }, [center, zoom, map]);
+  return null;
+};
 
 const { Option } = Select;
 
@@ -19,18 +58,59 @@ const capabilitiesList: { type: CapabilityType; label: string }[] = [
 ];
 
 export const Transactions: React.FC = () => {
-  const [selectedCapability, setSelectedCapability] = useState<CapabilityType>('NEW_LINE');
   const [selectedStoreId, setSelectedStoreId] = useState<number | undefined>(undefined);
   const [mapCenter, setMapCenter] = useState({ lat: 41.0082, lng: 28.9784 });
   const [zoomLevel, setZoomLevel] = useState(12);
 
-  // Simulated latency for Drawer details
-  const [isDrawerLoading, setIsDrawerLoading] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<FormValues>({
+    capabilityType: 'NEW_LINE',
+    workingHours: 'ALL',
+    storeType: 'ALL'
+  });
 
-  // Filter stores that support the selected capability
+  const { control, handleSubmit, formState: { errors } } = useForm<FormValues>({
+    resolver: yupResolver(schema) as any,
+    defaultValues: {
+      capabilityType: 'NEW_LINE',
+      workingHours: 'ALL',
+      storeType: 'ALL'
+    }
+  });
+
+  // Filter stores that support the selected capability and other filters
   const eligibleStores = mockStores.map(store => {
     const caps = mockStoreCapabilities[store.id] ?? [];
-    const isEligible = caps.includes(selectedCapability);
+    
+    // Check capability eligibility
+    const hasCapability = appliedFilters.capabilityType ? caps.includes(appliedFilters.capabilityType as CapabilityType) : false;
+
+    // Check store type eligibility
+    const matchesStoreType = appliedFilters.storeType === 'ALL' || store.type === appliedFilters.storeType;
+
+    // Check working hours eligibility
+    let matchesWorkingHours = true;
+    if (appliedFilters.workingHours === 'LATE_CLOSE') {
+      const hours = store.workingHours || '';
+      const parts = hours.split('-');
+      if (parts.length === 2) {
+        const closeTime = parts[1].trim();
+        const closeHour = parseInt(closeTime.split(':')[0]);
+        if (isNaN(closeHour) || closeHour < 21) {
+          matchesWorkingHours = false;
+        }
+      } else {
+        matchesWorkingHours = false;
+      }
+    } else if (appliedFilters.workingHours === 'WEEKEND') {
+      const hours = store.workingHours || '';
+      const isLateFranchise = hours.includes('21:00') || hours.includes('22:00');
+      const isOpenWeekend = store.type === 'TIM' || isLateFranchise;
+      if (!isOpenWeekend) {
+        matchesWorkingHours = false;
+      }
+    }
+
+    const isEligible = hasCapability && matchesStoreType && matchesWorkingHours;
 
     // Mock distance for display purposes (Haversine simulated)
     const simulatedDistance = parseFloat((Math.random() * 8 + 1.2).toFixed(1));
@@ -45,9 +125,7 @@ export const Transactions: React.FC = () => {
   .filter(item => item.isEligible)
   .sort((a, b) => a.distance - b.distance); // sort by distance
 
-  const selectedStore = eligibleStores.find(s => s.id === selectedStoreId);
-
-  // Reset selection and adjust center when capability changes
+  // Reset selection and adjust center when filters change
   useEffect(() => {
     setSelectedStoreId(undefined);
     setZoomLevel(12);
@@ -56,55 +134,11 @@ export const Transactions: React.FC = () => {
     } else {
       setMapCenter({ lat: 41.0082, lng: 28.9784 });
     }
-  }, [selectedCapability]);
+  }, [appliedFilters]);
 
-  // Simulate loading state whenever a store details panel opens
-  useEffect(() => {
-    if (selectedStoreId) {
-      setIsDrawerLoading(true);
-      const timer = setTimeout(() => {
-        setIsDrawerLoading(false);
-      }, 600); // 600ms latency simulation
-      return () => clearTimeout(timer);
-    }
-  }, [selectedStoreId]);
-
-  const handleStoreSelect = (store: Store & { distance: number }) => {
-    setSelectedStoreId(store.id);
-    setMapCenter({ lat: store.latitude, lng: store.longitude });
-    setZoomLevel(17);
+  const onSubmit = (data: FormValues) => {
+    setAppliedFilters(data);
   };
-
-  const transactionsExtraDetail = selectedStore && (
-    <div className="drawer-detail-section" style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.5rem' }}>
-      <div className="drawer-detail-label">Desteklenen İşlemler</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
-        {selectedStore.capabilities.map(capCode => {
-          const capLabel = capabilitiesList.find(c => c.type === capCode)?.label ?? capCode;
-          const isCurrentSearch = capCode === selectedCapability;
-          return (
-            <div 
-              key={capCode}
-              style={{
-                padding: '0.5rem 0.75rem',
-                background: isCurrentSearch ? 'rgba(51, 84, 166, 0.15)' : 'rgba(255,255,255,0.03)',
-                border: isCurrentSearch ? '1px solid rgb(51, 84, 166)' : '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                color: isCurrentSearch ? '#ffffff' : 'var(--text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}
-            >
-              <span>{capLabel}</span>
-              {isCurrentSearch && <Tag color="success" style={{ margin: 0, fontSize: '0.7rem' }}>Aranan İşlem</Tag>}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
 
   return (
     <div className="page-container animate-fade-in">
@@ -123,25 +157,78 @@ export const Transactions: React.FC = () => {
 
       <div className="locator-layout">
         {/* Sidebar Controls */}
-        <aside className="locator-sidebar glass-panel">
-          <h3 className="sidebar-title">İşlem Seçin</h3>
+        <aside className="locator-sidebar glass-panel" style={{ overflowY: 'auto' }}>
+          <h3 className="sidebar-title">Bayi Filtreleme</h3>
           
-          <div className="filter-group">
-            <label className="filter-label">Hangi işlemi gerçekleştirmek istiyorsunuz?</label>
-            <Select 
-              value={selectedCapability} 
-              style={{ width: '100%' }} 
-              onChange={(val) => setSelectedCapability(val as CapabilityType)}
-            >
-              {capabilitiesList.map(cap => (
-                <Option key={cap.type} value={cap.type}>
-                  {cap.label}
-                </Option>
-              ))}
-            </Select>
-          </div>
+          <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="filter-group">
+              <label className="filter-label">Hangi işlemi gerçekleştirmek istiyorsunuz? *</label>
+              <Controller
+                name="capabilityType"
+                control={control}
+                render={({ field }) => (
+                  <Select 
+                    {...field}
+                    style={{ width: '100%' }}
+                    placeholder="İşlem Seçiniz"
+                    status={errors.capabilityType ? 'error' : ''}
+                  >
+                    <Option value="">-- İşlem Seçiniz --</Option>
+                    {capabilitiesList.map(cap => (
+                      <Option key={cap.type} value={cap.type}>
+                        {cap.label}
+                      </Option>
+                    ))}
+                  </Select>
+                )}
+              />
+              {errors.capabilityType && (
+                <span className="error-message" style={{ color: 'var(--color-danger)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                  {errors.capabilityType.message}
+                </span>
+              )}
+            </div>
 
-          <div className="filter-group" style={{ marginTop: '1rem' }}>
+            <div className="filter-group">
+              <label className="filter-label">Çalışma Günleri & Saatleri</label>
+              <Controller
+                name="workingHours"
+                control={control}
+                render={({ field }) => (
+                  <Select {...field} style={{ width: '100%' }}>
+                    <Option value="ALL">Tüm Saatler</Option>
+                    <Option value="WEEKEND">Hafta Sonu Açık</Option>
+                    <Option value="LATE_CLOSE">Geç Kapanan (21:00+)</Option>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="filter-group">
+              <label className="filter-label">Bayi Tipi</label>
+              <Controller
+                name="storeType"
+                control={control}
+                render={({ field }) => (
+                  <Select {...field} style={{ width: '100%' }}>
+                    <Option value="ALL">Tümü</Option>
+                    <Option value="TIM">Sadece TİM</Option>
+                    <Option value="FRANCHISE">Sadece Franchise</Option>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              className="module-btn yellow-btn" 
+              style={{ width: '100%', padding: '0.6rem', marginTop: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+            >
+              🔍 Bayi Ara
+            </button>
+          </form>
+
+          <div className="filter-group" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
             <span className="filter-label">
               Uygun Bayiler ({eligibleStores.length})
             </span>
@@ -150,26 +237,37 @@ export const Transactions: React.FC = () => {
           <div className="card-list">
             {eligibleStores.length > 0 ? (
               eligibleStores.map(item => (
-                <StoreCard
-                  key={item.id}
-                  store={item}
-                  isSelected={item.id === selectedStoreId}
-                  onClick={() => handleStoreSelect(item)}
-                  extra={
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                        {item.type === 'TIM' ? (
-                          <Tag color="blue">TIM</Tag>
-                        ) : (
-                          <Tag color="cyan">Franchise</Tag>
-                        )}
-                      </div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {item.capabilities.length} işlem destekliyor
-                      </span>
+                <Card 
+                  key={item.id} 
+                  className="list-card glass-panel" 
+                  bodyStyle={{ padding: '0.75rem 1rem' }}
+                  style={{ 
+                    border: item.id === selectedStoreId ? '1px solid var(--turkcell-yellow)' : '1px solid transparent', 
+                    cursor: 'pointer' 
+                  }}
+                  onClick={() => {
+                    setSelectedStoreId(item.id);
+                    setMapCenter({ lat: item.latitude, lng: item.longitude });
+                    setZoomLevel(17);
+                  }}
+                >
+                  <div className="list-card-title">{item.name}</div>
+                  <div className="list-card-subtitle" style={{ marginBottom: '0.5rem' }}>
+                    {item.district}, {item.city} &bull; <strong>{item.distance} km uzakta</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                      {item.type === 'TIM' ? (
+                        <Tag color="blue">TIM</Tag>
+                      ) : (
+                        <Tag color="cyan">Franchise</Tag>
+                      )}
                     </div>
-                  }
-                />
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {item.capabilities.length} işlem destekliyor
+                    </span>
+                  </div>
+                </Card>
               ))
             ) : (
               <Empty description="Bu işlemi destekleyen bayi bulunamadı" image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -179,23 +277,134 @@ export const Transactions: React.FC = () => {
 
         {/* Map View Area */}
         <main className="locator-main glass-panel" style={{ padding: '0.5rem', overflow: 'hidden', zIndex: 1 }}>
-          <StoreMap
-            center={mapCenter}
-            zoom={zoomLevel}
-            stores={eligibleStores}
-            selectedStoreId={selectedStoreId}
-            onStoreSelect={handleStoreSelect}
-          />
+          <MapContainer
+            center={[mapCenter.lat, mapCenter.lng]}
+            zoom={12}
+            scrollWheelZoom={true}
+            style={{ width: '100%', height: '100%', borderRadius: 'var(--radius-md)' }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <RecenterMap center={mapCenter} zoom={zoomLevel} />
+            {eligibleStores.map(item => (
+              <Marker
+                key={item.id}
+                position={[item.latitude, item.longitude]}
+                icon={transactionsMapIcon}
+                eventHandlers={{
+                  click: () => {
+                    setSelectedStoreId(item.id);
+                    setMapCenter({ lat: item.latitude, lng: item.longitude });
+                    setZoomLevel(17);
+                  }
+                }}
+              />
+            ))}
+            {selectedStoreId && (() => {
+              const selectedStore = eligibleStores.find(s => s.id === selectedStoreId);
+              if (!selectedStore) return null;
+              return (
+                <Popup
+                  position={[selectedStore.latitude, selectedStore.longitude]}
+                  eventHandlers={{
+                    remove: () => setSelectedStoreId(undefined)
+                  }}
+                >
+                  <div style={{ color: '#060913', fontFamily: 'sans-serif', fontSize: '0.85rem' }}>
+                    <strong style={{ display: 'block', marginBottom: '0.25rem' }}>{selectedStore.name}</strong>
+                    {selectedStore.address}
+                  </div>
+                </Popup>
+              );
+            })()}
+          </MapContainer>
         </main>
       </div>
-
-      <StoreDetailsDrawer
-        open={selectedStoreId !== undefined}
+      <Drawer
+        title="Bayi Detay Bilgileri"
+        placement="right"
         onClose={() => setSelectedStoreId(undefined)}
-        store={selectedStore}
-        isLoading={isDrawerLoading}
-        extra={transactionsExtraDetail}
-      />
+        open={selectedStoreId !== undefined}
+        width={380}
+      >
+        {(() => {
+          const selectedStore = eligibleStores.find(s => s.id === selectedStoreId);
+          if (!selectedStore) return null;
+          return (
+            <div style={{ padding: '0.5rem 0' }}>
+              <div className="drawer-detail-section" style={{ marginBottom: '2rem' }}>
+                <div 
+                  style={{ 
+                    fontSize: '1.25rem', 
+                    fontWeight: 700, 
+                    color: 'var(--turkcell-blue)',
+                    marginBottom: '0.5rem'
+                  }}
+                >
+                  {selectedStore.name}
+                </div>
+                <Tag color={selectedStore.type === 'TIM' ? 'blue' : 'cyan'}>
+                  {selectedStore.type === 'TIM' ? 'TİM Bayisi' : 'Franchise Acente'}
+                </Tag>
+              </div>
+
+              <div className="drawer-detail-section">
+                <div className="drawer-detail-label">Adres</div>
+                <div className="drawer-detail-value">{selectedStore.address}</div>
+                <div className="drawer-detail-value" style={{ marginTop: '0.25rem', color: 'rgba(0, 0, 0, 0.6)' }}>
+                  {selectedStore.district}, {selectedStore.city}
+                </div>
+              </div>
+
+              <div className="drawer-detail-section">
+                <div className="drawer-detail-label">Telefon</div>
+                <div className="drawer-detail-value">{selectedStore.phone || 'N/A'}</div>
+              </div>
+
+              <div className="drawer-detail-section">
+                <div className="drawer-detail-label">Çalışma Saatleri</div>
+                <div className="drawer-detail-value">⏱️ {selectedStore.workingHours || '09:00 - 20:00'}</div>
+              </div>
+
+              <div className="drawer-detail-section">
+                <div className="drawer-detail-label">Uzaklık</div>
+                <div className="drawer-detail-value">📍 {selectedStore.distance} km uzakta</div>
+              </div>
+
+              <div className="drawer-detail-section" style={{ marginTop: '2rem', borderTop: '1px solid rgba(0, 0, 0, 0.08)', paddingTop: '1.5rem' }}>
+                <div className="drawer-detail-label">Desteklenen İşlemler</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
+                  {selectedStore.capabilities.map(capCode => {
+                    const capLabel = capabilitiesList.find(c => c.type === capCode)?.label ?? capCode;
+                    const isCurrentSearch = capCode === appliedFilters.capabilityType;
+                    return (
+                      <div 
+                        key={capCode}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          background: isCurrentSearch ? 'rgba(51, 84, 166, 0.08)' : 'rgba(0, 0, 0, 0.03)',
+                          border: isCurrentSearch ? '1px solid rgb(51, 84, 166)' : '1px solid rgba(0, 0, 0, 0.06)',
+                          borderRadius: '6px',
+                          fontSize: '0.85rem',
+                          color: isCurrentSearch ? 'rgb(51, 84, 166)' : '#333333',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}
+                      >
+                        <span>{capLabel}</span>
+                        {isCurrentSearch && <Tag color="success" style={{ margin: 0, fontSize: '0.7rem' }}>Aranan İşlem</Tag>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </Drawer>
     </div>
   );
 };
