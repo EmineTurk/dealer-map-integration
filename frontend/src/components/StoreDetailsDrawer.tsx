@@ -55,7 +55,7 @@ export const StoreDetailsDrawer: React.FC<StoreDetailsDrawerProps> = ({
           </div>
 
           {/* Skeleton extra details section */}
-          <div className="drawer-detail-section" style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.5rem' }}>
+          <div className="drawer-detail-section" style={{ marginTop: '2rem', borderTop: '1px solid rgba(0, 0, 0, 0.08)', paddingTop: '1.5rem' }}>
             <Skeleton.Input active size="small" style={{ width: '150px', height: '14px', marginBottom: '0.5rem' }} />
             <Skeleton active paragraph={{ rows: 1, width: ['90%'] }} title={false} />
           </div>
@@ -68,7 +68,7 @@ export const StoreDetailsDrawer: React.FC<StoreDetailsDrawerProps> = ({
                 style={{ 
                   fontSize: '1.25rem', 
                   fontWeight: 700, 
-                  color: 'var(--turkcell-yellow)',
+                  color: 'var(--turkcell-blue)',
                   marginBottom: '0.5rem'
                 }}
               >
@@ -82,7 +82,7 @@ export const StoreDetailsDrawer: React.FC<StoreDetailsDrawerProps> = ({
             <div className="drawer-detail-section">
               <div className="drawer-detail-label">Adres</div>
               <div className="drawer-detail-value">{store.address}</div>
-              <div className="drawer-detail-value" style={{ marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
+              <div className="drawer-detail-value" style={{ marginTop: '0.25rem', color: 'rgba(0, 0, 0, 0.6)' }}>
                 {store.district}, {store.city}
               </div>
             </div>

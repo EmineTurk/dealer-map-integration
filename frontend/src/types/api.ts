@@ -20,6 +20,10 @@ export interface Store {
   workingHours?: string;
 }
 
+export interface StoreWithDistance extends Store {
+  distance: number; // calculated in km (e.g. Haversine distance), 1 decimal place
+}
+
 // --- stock-service (Pasaj) Types ---
 
 export interface Product {
@@ -31,15 +35,9 @@ export interface Product {
 
 export type StockLevel = 'IN_STOCK' | 'LOW' | 'OUT_OF_STOCK';
 
-export interface ProductStoreStockResponse {
-  storeId: number;
-  storeName: string;
-  latitude: number;
-  longitude: number;
-  address: string;
-  distance: number; // calculated in km (e.g. Haversine distance)
+export interface StoreStockResult extends StoreWithDistance {
   stockLevel: StockLevel;
-  quantity?: number; // optional, database quantity value
+  quantity?: number; // optional exact quantity from database
 }
 
 // --- capability-service (turkcell.com.tr) Types ---
@@ -51,12 +49,13 @@ export type CapabilityType =
   | 'NUMBER_PORT'
   | 'BILL_PAYMENT';
 
-export interface StoreCapabilityResponse {
-  storeId: number;
-  storeName: string;
-  latitude: number;
-  longitude: number;
-  address: string;
-  distance: number; // calculated in km
-  capabilities: CapabilityType[];
+export interface CapabilityTypeOption {
+  key: CapabilityType;
+  label: string;
 }
+
+export interface StoreCapabilityResult extends StoreWithDistance {}
+
+// Backward compatibility mappings
+export interface ProductStoreStockResponse extends StoreStockResult {}
+export interface StoreCapabilityResponse extends StoreCapabilityResult {}
