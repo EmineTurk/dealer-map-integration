@@ -3,6 +3,10 @@ package com.turkcell.stock_service.presentation.controller;
 import com.turkcell.stock_service.application.service.ProductService;
 import com.turkcell.stock_service.application.dto.ProductResponse;
 import com.turkcell.stock_service.application.dto.StockResponse;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+
+import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.validation.constraints.Positive;
 import org.springframework.validation.annotation.Validated;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 
 import java.util.List;
 
@@ -94,8 +99,22 @@ public class ProductController {
     public List<StockResponse> getStoresByProductId(
             @PathVariable
             @Positive(message = "Ürün ID değeri pozitif olmalıdır")
-            Long id
-    ) {
-        return productService.getStoresByProductId(id);
+            Long id,
+
+            @RequestParam
+            @DecimalMin(value = "-90.0", message = "Latitude en az -90 olmalıdır")
+            @DecimalMax(value = "90.0", message = "Latitude en fazla 90 olmalıdır")
+            double lat,
+
+            @RequestParam
+            @DecimalMin(value = "-180.0", message = "Longitude en az -180 olmalıdır")
+            @DecimalMax(value = "180.0", message = "Longitude en fazla 180 olmalıdır")
+            double lng,
+
+            @RequestParam
+            @Positive(message = "Radius pozitif olmalıdır")
+            double radius)
+    {
+        return productService.getStoresByProductId(id, lat, lng, radius);
     }
 }

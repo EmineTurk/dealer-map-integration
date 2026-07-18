@@ -13,6 +13,7 @@ public class StockService {
     private final StockRepository stockRepository;
     private final StockMapper stockMapper;
 
+
     public StockService(
             StockRepository stockRepository,
             StockMapper stockMapper
