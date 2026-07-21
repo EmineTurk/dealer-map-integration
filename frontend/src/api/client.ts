@@ -28,6 +28,39 @@ export const capabilityApi = axios.create({
   timeout: 5000,
 });
 
+// API Connection & CORS Status Tracker
+export const apiStatus = {
+  isUsingFallback: false,
+  lastErrorMessage: '',
+};
+
+const handleApiError = (serviceName: string, baseURL: string, error: any) => {
+  apiStatus.isUsingFallback = true;
+  let message = 'Backend sunucusuna bağlanılamadı.';
+  
+  if (error.code === 'ERR_NETWORK') {
+    message = `${serviceName} (${baseURL}) adresine erişilemiyor veya CORS izni verilmeli (@CrossOrigin).`;
+  } else if (error.response) {
+    message = `${serviceName} HTTP ${error.response.status} hatası döndürdü.`;
+  }
+  
+  apiStatus.lastErrorMessage = message;
+  console.warn(`[CORS / API Katmanı Uyarısı] ${serviceName} ->`, message, error);
+};
+
+// Interceptor setup for diagnostic logging
+[stockApi, storeApi, capabilityApi].forEach(api => {
+  api.interceptors.response.use(
+    response => response,
+    error => {
+      if (error.code === 'ERR_NETWORK' || !error.response) {
+        console.info('[CORS Diagnostic] Cross-Origin or Network Error detected on request:', error.config?.url);
+      }
+      return Promise.reject(error);
+    }
+  );
+});
+
 // Helper for Haversine distance simulation in mock fallbacks
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; // Earth radius in km
@@ -49,7 +82,7 @@ export const apiService = {
       const response = await stockApi.get<Product[]>('/products');
       return response.data;
     } catch (error) {
-      console.warn('API error fetching products, using mock fallback:', error);
+      handleApiError('stock-service', VITE_STOCK_SERVICE_URL, error);
       return mockProducts;
     }
   },
@@ -66,7 +99,7 @@ export const apiService = {
       });
       return response.data;
     } catch (error) {
-      console.warn('API error fetching stores for product, using mock fallback:', error);
+      handleApiError('stock-service', VITE_STOCK_SERVICE_URL, error);
       // Mock local filtering logic:
       return mockStores.map(store => {
         const qty = mockStocks[`${productId}-${store.id}`] ?? 0;
@@ -92,7 +125,7 @@ export const apiService = {
       const response = await capabilityApi.get<CapabilityTypeOption[]>('/capabilities/types');
       return response.data;
     } catch (error) {
-      console.warn('API error fetching capability types, using mock fallback:', error);
+      handleApiError('capability-service', VITE_CAPABILITY_SERVICE_URL, error);
       return [
         { key: 'NEW_LINE', label: 'Yeni Hat Aktivasyonu' },
         { key: 'DEVICE_DELIVERY', label: 'Cihaz Teslimatı' },
@@ -116,7 +149,7 @@ export const apiService = {
       });
       return response.data;
     } catch (error) {
-      console.warn('API error fetching stores for capability, using mock fallback:', error);
+      handleApiError('capability-service', VITE_CAPABILITY_SERVICE_URL, error);
       
       // Mock filtering logic on fallback
       return mockStores.map(store => {

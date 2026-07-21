@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Select, Tag, Empty, Button } from 'antd';
+import { Select, Tag, Empty, Button, Spin } from 'antd';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -29,6 +29,7 @@ export const Transactions: React.FC = () => {
   const [selectedStoreId, setSelectedStoreId] = useState<number | undefined>(undefined);
   const [mapCenter, setMapCenter] = useState({ lat: 41.0082, lng: 28.9784 });
   const [zoomLevel, setZoomLevel] = useState(12);
+  const [isSearching, setIsSearching] = useState(false);
   const [isDrawerLoading, setIsDrawerLoading] = useState(false);
 
   // Geolocation & Fallback States
@@ -108,6 +109,7 @@ export const Transactions: React.FC = () => {
       return;
     }
 
+    setIsSearching(true);
     apiService.getCapabilityStores(
       appliedFilters.capabilityType as CapabilityType,
       userCoords.lat,
@@ -117,8 +119,12 @@ export const Transactions: React.FC = () => {
         workingHours: appliedFilters.workingHours,
         storeType: appliedFilters.storeType
       }
-    ).then(data => {
+    )
+    .then(data => {
       setEligibleStores(data);
+    })
+    .finally(() => {
+      setIsSearching(false);
     });
   }, [appliedFilters, userCoords]);
 
@@ -299,6 +305,7 @@ export const Transactions: React.FC = () => {
             <Button 
               type="primary" 
               htmlType="submit" 
+              loading={isSearching}
               style={{ width: '100%', marginTop: '1.25rem', backgroundColor: 'var(--turkcell-blue)', borderColor: 'var(--turkcell-blue)' }}
             >
               Bayi Ara
@@ -312,7 +319,11 @@ export const Transactions: React.FC = () => {
           </div>
 
           <div className="card-list">
-            {eligibleStores.length > 0 ? (
+            {isSearching ? (
+              <div style={{ textAlign: 'center', padding: '2.5rem 0' }}>
+                <Spin tip="Uygun bayiler aranıyor..." size="large" />
+              </div>
+            ) : eligibleStores.length > 0 ? (
               eligibleStores.map(item => (
                 <StoreCard
                   key={item.id}

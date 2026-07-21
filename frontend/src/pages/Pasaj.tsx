@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Select, Tag, Badge, Empty } from 'antd';
+import { Select, Tag, Badge, Empty, Spin } from 'antd';
 import { StoreCard } from '../components/StoreCard';
 import { StoreMap } from '../components/StoreMap';
 import { StoreDetailsDrawer } from '../components/StoreDetailsDrawer';
@@ -37,6 +37,7 @@ export const Pasaj: React.FC = () => {
 
   // Results list from API
   const [storeStocksList, setStoreStocksList] = useState<(Store & { stockLevel: StockLevel; distance: number; quantity?: number })[]>([]);
+  const [isStoreLoading, setIsStoreLoading] = useState(false);
   const [isDrawerLoading, setIsDrawerLoading] = useState(false);
 
   // Load products list from API on mount
@@ -115,13 +116,18 @@ export const Pasaj: React.FC = () => {
       return;
     }
     
-    apiService.getProductStores(selectedProductId, userCoords.lat, userCoords.lng, 10).then(data => {
-      const mapped = data.map(item => ({
-        ...item,
-        quantity: item.quantity ?? 0
-      }));
-      setStoreStocksList(mapped);
-    });
+    setIsStoreLoading(true);
+    apiService.getProductStores(selectedProductId, userCoords.lat, userCoords.lng, 10)
+      .then(data => {
+        const mapped = data.map(item => ({
+          ...item,
+          quantity: item.quantity ?? 0
+        }));
+        setStoreStocksList(mapped);
+      })
+      .finally(() => {
+        setIsStoreLoading(false);
+      });
   }, [selectedProductId, userCoords]);
 
   const selectedStore = storeStocksList.find(s => s.id === selectedStoreId);
@@ -301,7 +307,11 @@ export const Pasaj: React.FC = () => {
           </div>
 
           <div className="card-list">
-            {storeStocksList.length > 0 ? (
+            {isStoreLoading ? (
+              <div style={{ textAlign: 'center', padding: '2.5rem 0' }}>
+                <Spin tip="Stoktaki mağazalar yükleniyor..." size="large" />
+              </div>
+            ) : storeStocksList.length > 0 ? (
               storeStocksList.map(item => (
                 <StoreCard
                   key={item.id}
