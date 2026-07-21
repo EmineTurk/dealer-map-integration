@@ -1,10 +1,13 @@
 package com.turkcell.capability_service.application.service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,15 +37,19 @@ public class CapabilityApplicationService {
 		this.distanceCalculator = distanceCalculator;
 	}
 
+	@Cacheable(cacheNames = "capability-types")
 	public List<CapabilityTypeOption> getCapabilityTypes() {
 		return Arrays.stream(CapabilityType.values())
 				.map(CapabilityTypeOption::from)
-				.toList();
+				.collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	/**
 	 * GET /capabilities/{type}/stores?lat=&lng=&radius=&workingHours=&status=
 	 */
+	@Cacheable(
+			cacheNames = "capability-store-search",
+			key = "{#typeKey, #lat, #lng, #radius, #workingHours, #status}")
 	public List<StoreCapabilityResult> findStoresByCapability(
 			String typeKey,
 			double lat,
@@ -78,7 +85,7 @@ public class CapabilityApplicationService {
 				})
 				.filter(result -> result.distance() <= radius)
 				.sorted(Comparator.comparingDouble(StoreCapabilityResult::distance))
-				.toList();
+				.collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	private static boolean matchesStatus(StoreDto store, String statusFilter) {

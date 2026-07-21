@@ -20,11 +20,11 @@ turkcell.com.tr **"Yakınımda İşlem"** modülünün backend servisi (Backend 
 
 ## Çalıştırma
 
-Önkoşul: Oracle ayakta + **store-service (8081)** ayakta.
+Önkoşul: Oracle ve Redis ayakta + **store-service (8081)** ayakta.
 
 ```bash
 # proje kökünden
-docker compose up -d oracle
+docker compose up -d oracle redis
 
 # store-service
 cd store-service && mvnw.cmd spring-boot:run
@@ -39,4 +39,18 @@ Swagger: http://localhost:8082/swagger-ui.html
 
 ```http
 GET http://localhost:8082/capabilities/DEVICE_REPAIR/stores?lat=41.02&lng=29.01&radius=10&status=ACTIVE&workingHours=weekend
+```
+
+## Gün 10-11: CORS ve Redis
+
+- Frontend origin'leri: `http://localhost:5173`, `http://localhost:3000`
+- Capability sorguları Redis'te **1 saat** tutulur.
+- Key prefix: `capability-service::`
+- Cache hit/miss bilgisi uygulama logunda TRACE seviyesinde görünür.
+
+Redis kontrolü:
+
+```bash
+docker exec turkcell-redis redis-cli ping
+docker exec turkcell-redis redis-cli --scan --pattern "capability-service::*"
 ```

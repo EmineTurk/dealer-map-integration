@@ -24,8 +24,8 @@ Swagger: http://localhost:8081/swagger-ui.html
 ## Çalıştırma
 
 ```bash
-# proje kökünden Oracle
-docker compose up -d oracle
+# proje kökünden Oracle + Redis
+docker compose up -d oracle redis
 
 cd store-service
 mvnw.cmd spring-boot:run
@@ -34,6 +34,18 @@ mvnw.cmd spring-boot:run
 Bağlantı: `store_app` / `StoreApp123` @ `FREEPDB1` (port 1521)
 
 İlk açılışta `StoreDataLoader` tablo boşsa 15 İstanbul bayisini seed eder.
+
+## Gün 10-11: CORS ve Redis
+
+- Frontend origin'leri: `http://localhost:5173`, `http://localhost:3000`
+- Bayi sorguları Redis'te **1 saat** tutulur.
+- Key prefix: `store-service::`
+- Cache hit/miss bilgisi uygulama logunda TRACE seviyesinde görünür.
+
+```bash
+docker exec turkcell-redis redis-cli ping
+docker exec turkcell-redis redis-cli --scan --pattern "store-service::*"
+```
 
 ## DDD paket yapısı (Gün 6)
 

@@ -17,9 +17,17 @@ spring:
       hibernate:
         format_sql: true
 
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      connect-timeout: 2s
+      timeout: 2s
+      repositories:
+        enabled: false
+
+  cache:
+    type: redis
 
 server:
   port: 8082
@@ -28,7 +36,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,caches
+
+logging:
+  level:
+    org.springframework.cache.interceptor.CacheInterceptor: TRACE
 
 springdoc:
   api-docs:
@@ -40,3 +52,7 @@ store-service:
   base-url: http://localhost:8081
   connect-timeout-ms: 2000
   read-timeout-ms: 3000
+
+app:
+  cors:
+    allowed-origins: http://localhost:5173,http://localhost:3000

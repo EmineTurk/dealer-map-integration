@@ -1,8 +1,11 @@
 package com.turkcell.store_service.application.service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,13 +26,15 @@ public class StoreApplicationService {
 		this.storeMapper = storeMapper;
 	}
 
+	@Cacheable(cacheNames = "stores-all")
 	public List<StoreResponse> getAllStores() {
 		return storeRepository.findAll().stream()
 				.map(storeMapper::toDomain)
 				.map(StoreResponse::from)
-				.toList();
+				.collect(Collectors.toCollection(ArrayList::new));
 	}
 
+	@Cacheable(cacheNames = "store-by-id", key = "#id")
 	public StoreResponse getStoreById(Long id) {
 		return storeRepository.findById(id)
 				.map(storeMapper::toDomain)
@@ -41,6 +46,7 @@ public class StoreApplicationService {
 	 * Bulk lookup for stock-service / capability-service.
 	 * Missing IDs are silently skipped (callers already know their IDs).
 	 */
+	@Cacheable(cacheNames = "stores-by-ids", key = "#ids")
 	public List<StoreResponse> getStoresByIds(List<Long> ids) {
 		if (ids == null || ids.isEmpty()) {
 			return List.of();
@@ -48,21 +54,22 @@ public class StoreApplicationService {
 		return storeRepository.findByIdIn(ids).stream()
 				.map(storeMapper::toDomain)
 				.map(StoreResponse::from)
-				.toList();
+				.collect(Collectors.toCollection(ArrayList::new));
 	}
 
+	@Cacheable(cacheNames = "stores-by-region", key = "{#city, #district}")
 	public List<StoreResponse> getStoresByRegion(String city, String district) {
 		List<StoreResponse> stores;
 		if (city != null && !city.isBlank() && district != null && !district.isBlank()) {
 			stores = storeRepository.findByCityIgnoreCaseAndDistrictIgnoreCase(city.trim(), district.trim()).stream()
 					.map(storeMapper::toDomain)
 					.map(StoreResponse::from)
-					.toList();
+					.collect(Collectors.toCollection(ArrayList::new));
 		} else if (city != null && !city.isBlank()) {
 			stores = storeRepository.findByCityIgnoreCase(city.trim()).stream()
 					.map(storeMapper::toDomain)
 					.map(StoreResponse::from)
-					.toList();
+					.collect(Collectors.toCollection(ArrayList::new));
 		} else {
 			stores = getAllStores();
 		}
