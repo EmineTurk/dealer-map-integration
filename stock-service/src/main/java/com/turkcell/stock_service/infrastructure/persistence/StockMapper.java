@@ -13,14 +13,4 @@ public class StockMapper {
                 stockEntity.getQuantity()
         );
     }
-
-    public StockEntity toEntity(Stock stock) {
-        StockEntity stockEntity = new StockEntity();
-
-        stockEntity.setProductId(stock.getProductId());
-        stockEntity.setStoreId(stock.getStoreId());
-        stockEntity.setQuantity(stock.getQuantity());
-
-        return stockEntity;
-    }
 }

@@ -4,23 +4,23 @@ public class Stock {
 
     private final Long productId;
     private final Long storeId;
-    private final Integer quantity;
+    private final int quantity;
 
     public Stock(Long productId, Long storeId, Integer quantity) {
         if (productId == null) {
-            throw new IllegalArgumentException("productId boş olamaz");
+            throw new IllegalArgumentException("product id cannot be null");
         }
 
         if (storeId == null) {
-            throw new IllegalArgumentException("storeId boş olamaz");
+            throw new IllegalArgumentException("store id cannot be null");
         }
 
         if (quantity == null) {
-            throw new IllegalArgumentException("quantity boş olamaz");
+            throw new IllegalArgumentException("quantity cannot be null");
         }
 
         if (quantity < 0) {
-            throw new IllegalArgumentException("quantity negatif olamaz");
+            throw new IllegalArgumentException("quantity cannot be negative");
         }
 
         this.productId = productId;
@@ -36,11 +36,7 @@ public class Stock {
         return storeId;
     }
 
-    public Integer getQuantity() {
+    public int getQuantity() {
         return quantity;
-    }
-
-    public StockLevel getStockLevel() {
-        return StockLevel.fromQuantity(quantity);
     }
 }

@@ -3,26 +3,32 @@ spring:
     name: stock-service
 
   datasource:
-    url: jdbc:oracle:thin:@//localhost:1521/FREEPDB1
-    username: SYSTEM
-    password: 123456
+    url: ${STOCK_DB_URL:jdbc:oracle:thin:@//localhost:1521/FREEPDB1}
+    username: ${STOCK_DB_USERNAME}
+    password: ${STOCK_DB_PASSWORD}
     driver-class-name: oracle.jdbc.OracleDriver
 
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: ${STOCK_JPA_SHOW_SQL:false}
     open-in-view: false
     properties:
       hibernate:
         format_sql: true
 
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
+
+clients:
+  store-service:
+    base-url: ${STORE_SERVICE_BASE_URL:http://localhost:8081}
+    connect-timeout: ${STORE_SERVICE_CONNECT_TIMEOUT:2s}
+    read-timeout: ${STORE_SERVICE_READ_TIMEOUT:3s}
+
+app:
+  cors:
+    allowed-origin: ${FRONTEND_ALLOWED_ORIGIN:http://localhost:5173}
 
 management:
   endpoints:

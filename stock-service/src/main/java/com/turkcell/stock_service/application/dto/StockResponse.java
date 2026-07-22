@@ -1,6 +1,7 @@
 package com.turkcell.stock_service.application.dto;
 
 import com.turkcell.stock_service.domain.model.StockLevel;
+import com.turkcell.stock_service.domain.model.StoreType;
 
 public record StockResponse(
         Long id,
@@ -8,10 +9,12 @@ public record StockResponse(
         String address,
         String city,
         String district,
-        Double latitude,
-        Double longitude,
-        String type,
-        StockLevel stockLevel,
-        double distance
+        double latitude,
+        double longitude,
+        StoreType type,
+        String phone,
+        String workingHours,
+        double distance,
+        StockLevel stockLevel
 ) {
 }

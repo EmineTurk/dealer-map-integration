@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "STOCK")
-@IdClass(StockId.class)
+@IdClass(StockEntityId.class)
 public class StockEntity {
 
     @Id
@@ -22,36 +22,19 @@ public class StockEntity {
     @Column(name = "QUANTITY", nullable = false)
     private Integer quantity;
 
-    public StockEntity() {
-    }
-
-    public StockEntity(Long productId, Long storeId, Integer quantity) {
-        this.productId = productId;
-        this.storeId = storeId;
-        this.quantity = quantity;
+    protected StockEntity() {
     }
 
     public Long getProductId() {
         return productId;
     }
 
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
-
     public Long getStoreId() {
         return storeId;
-    }
-
-    public void setStoreId(Long storeId) {
-        this.storeId = storeId;
     }
 
     public Integer getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
 }
