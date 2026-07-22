@@ -1,5 +1,7 @@
 package com.turkcell.stock_service.infrastructure.client.dto;
 
+import com.turkcell.stock_service.domain.model.StoreType;
+
 public record StoreClientResponse(
         Long id,
         String name,
@@ -8,6 +10,8 @@ public record StoreClientResponse(
         String district,
         Double latitude,
         Double longitude,
-        String type
+        StoreType type,
+        String phone,
+        String workingHours
 ) {
 }

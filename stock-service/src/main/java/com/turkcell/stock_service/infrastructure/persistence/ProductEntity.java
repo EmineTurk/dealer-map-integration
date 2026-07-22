@@ -1,13 +1,12 @@
 package com.turkcell.stock_service.infrastructure.persistence;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "PRODUCT")
-@Getter
-@Setter
 public class ProductEntity {
 
     @Id
@@ -22,4 +21,23 @@ public class ProductEntity {
 
     @Column(name = "CATEGORY")
     private String category;
+
+    protected ProductEntity() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public String getCategory() {
+        return category;
+    }
 }
