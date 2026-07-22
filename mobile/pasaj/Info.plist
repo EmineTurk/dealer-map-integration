@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Yerel geliştirme backend'ine (bayi/stok servisleri) bağlanmak için.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Size en yakın bayileri gösterebilmek için konumunuzu kullanıyoruz.</string>
+</dict>
+</plist>
