@@ -1,4 +1,4 @@
-## Gün 10 — Mikroservis Entegrasyonu, CORS ve Uçtan Uca Testler
+# Gün 10 — Mikroservis Entegrasyonu, CORS ve Uçtan Uca Testler
 ## Bugün ne yaptım
 
 Stock Service’in frontend ve diğer backend servisleriyle entegrasyonunu test ettim. Oracle üzerinde Stock Service için ayrı `stock_app` kullanıcısını oluşturdum. `PRODUCT` ve `STOCK` tablolarını proje içindeki SQL dosyalarına göre hazırlayıp örnek verileri yükledim.

@@ -17,6 +17,18 @@ spring:
       hibernate:
         format_sql: true
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT:2s}
+      timeout: ${REDIS_TIMEOUT:2s}
+      repositories:
+        enabled: false
+
+  cache:
+    type: redis
+
 server:
   port: ${SERVER_PORT:8080}
 
@@ -34,4 +46,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,caches
+
+logging:
+  level:
+    org.springframework.cache.interceptor.CacheInterceptor: TRACE

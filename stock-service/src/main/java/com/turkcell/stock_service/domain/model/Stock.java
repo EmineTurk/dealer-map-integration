@@ -1,6 +1,6 @@
 package com.turkcell.stock_service.domain.model;
 
-public class Stock {
+public final class Stock {
 
     private final Long productId;
     private final Long storeId;

@@ -1,6 +1,7 @@
 package com.turkcell.stock_service.presentation.exception;
 
 import com.turkcell.stock_service.domain.exception.ProductNotFoundException;
+import com.turkcell.stock_service.domain.exception.StockNotFoundException;
 import com.turkcell.stock_service.domain.exception.StoreServiceUnavailableException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -8,8 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -27,6 +30,27 @@ public class GlobalExceptionHandler {
             ProductNotFoundException exception
     ) {
         return createResponse(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(StockNotFoundException.class)
+    public ResponseEntity<ApiError> handleStockNotFound(
+            StockNotFoundException exception
+    ) {
+        return createResponse(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException exception
+    ) {
+        String message = exception.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(FieldError::getDefaultMessage)
+                .orElse("Invalid request");
+
+        return createResponse(HttpStatus.BAD_REQUEST, message);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)

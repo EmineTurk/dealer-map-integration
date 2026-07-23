@@ -1,0 +1,219 @@
+{
+  "info": {
+    "_postman_id": "4eabf499-d947-4edf-ad4d-b3882119a952",
+    "name": "Stock Service - Day 12 Cache Invalidation",
+    "description": "Sets a known stock level, primes the product-store cache, updates stock, and verifies that the stale cached result was evicted.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "productId",
+      "value": "1"
+    },
+    {
+      "key": "storeId",
+      "value": "1"
+    },
+    {
+      "key": "lat",
+      "value": "40.9901"
+    },
+    {
+      "key": "lng",
+      "value": "29.0253"
+    },
+    {
+      "key": "radius",
+      "value": "10"
+    }
+  ],
+  "item": [
+    {
+      "name": "1 - Set known IN_STOCK quantity",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 10\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/products/{{productId}}/stores/{{storeId}}/stock",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products",
+            "{{productId}}",
+            "stores",
+            "{{storeId}}",
+            "stock"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Setup update returns 204', function () {",
+              "  pm.response.to.have.status(204);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - Prime product-store cache",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/products/{{productId}}/stores?lat={{lat}}&lng={{lng}}&radius={{radius}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products",
+            "{{productId}}",
+            "stores"
+          ],
+          "query": [
+            {
+              "key": "lat",
+              "value": "{{lat}}"
+            },
+            {
+              "key": "lng",
+              "value": "{{lng}}"
+            },
+            {
+              "key": "radius",
+              "value": "{{radius}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Search returns 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Target store is IN_STOCK before update', function () {",
+              "  const target = pm.response.json().find(store => String(store.id) === pm.collectionVariables.get('storeId'));",
+              "  pm.expect(target).to.exist;",
+              "  pm.expect(target.stockLevel).to.eql('IN_STOCK');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Update quantity and evict cache",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 4\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/products/{{productId}}/stores/{{storeId}}/stock",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products",
+            "{{productId}}",
+            "stores",
+            "{{storeId}}",
+            "stock"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Stock update returns 204', function () {",
+              "  pm.response.to.have.status(204);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - Verify refreshed LOW result",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/products/{{productId}}/stores?lat={{lat}}&lng={{lng}}&radius={{radius}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products",
+            "{{productId}}",
+            "stores"
+          ],
+          "query": [
+            {
+              "key": "lat",
+              "value": "{{lat}}"
+            },
+            {
+              "key": "lng",
+              "value": "{{lng}}"
+            },
+            {
+              "key": "radius",
+              "value": "{{radius}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Search returns 200 after update', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Target store is LOW after cache eviction', function () {",
+              "  const target = pm.response.json().find(store => String(store.id) === pm.collectionVariables.get('storeId'));",
+              "  pm.expect(target).to.exist;",
+              "  pm.expect(target.stockLevel).to.eql('LOW');",
+              "  pm.expect(target).not.to.have.property('quantity');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

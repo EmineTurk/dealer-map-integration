@@ -2,7 +2,8 @@
 
 `stock-service` provides the product catalog and returns nearby stores that have a selected product in stock. Store master data is owned by `store-service` and is fetched with one bulk request.
 
-The implementation currently covers the project plan through Day 9. Redis caching is intentionally deferred to Day 11.
+The implementation currently covers the project plan through Day 12, including
+five-minute Redis caching and cache-consistent stock updates.
 
 ## Architecture
 
@@ -19,6 +20,7 @@ The code follows a layered, ports-and-adapters structure:
 ```http
 GET /products
 GET /products/{productId}/stores?lat=41.02&lng=29.01&radius=10
+PUT /products/{productId}/stores/{storeId}/stock
 GET /actuator/health
 ```
 
@@ -43,6 +45,10 @@ Local defaults are provided and can be overridden with environment variables:
 | `STORE_SERVICE_BASE_URL` | `http://localhost:8081` |
 | `STORE_SERVICE_CONNECT_TIMEOUT` | `2s` |
 | `STORE_SERVICE_READ_TIMEOUT` | `3s` |
+| `REDIS_HOST` | `localhost` |
+| `REDIS_PORT` | `6379` |
+| `REDIS_CONNECT_TIMEOUT` | `2s` |
+| `REDIS_TIMEOUT` | `2s` |
 | `FRONTEND_ALLOWED_ORIGIN` | `http://localhost:5173` |
 | `SERVER_PORT` | `8080` |
 
@@ -55,6 +61,57 @@ $env:STOCK_DB_USERNAME = "your_user"
 $env:STOCK_DB_PASSWORD = "your_password"
 ```
 
+## Redis Cache
+
+`GET /products/{productId}/stores` results are cached in Redis for five minutes.
+The cache key contains `productId`, `lat`, `lng`, and `radius`, so different
+searches do not share results. Entries use the service-specific key prefix
+`stock-service::product-stores::`.
+
+`GET /products` is not cached. If Redis is temporarily unavailable, the stock
+search logs the cache error and continues by reading from Oracle and
+`store-service`.
+
+A successful stock update evicts all `product-stores` entries after the
+database update completes. A rejected update does not evict the cache. Clearing
+the whole cache favors consistency; product-scoped eviction can be introduced
+later if the cache grows significantly.
+
+Start the shared Redis container from the repository root before running the
+service:
+
+```powershell
+docker compose up -d redis
+```
+
+Useful checks:
+
+```powershell
+docker exec turkcell-redis redis-cli ping
+docker exec turkcell-redis redis-cli --scan --pattern "stock-service::product-stores::*"
+```
+
+## Stock Update
+
+Set the absolute quantity of an existing product/store stock record:
+
+```http
+PUT /products/1/stores/1/stock
+Content-Type: application/json
+
+{ "quantity": 4 }
+```
+
+The response is `204 No Content`. Quantity must be zero or greater. Read
+endpoints continue to expose only `stockLevel`, never raw quantity.
+
+The cumulative collection, local environment, and Day 12 invalidation scenario
+are documented in:
+
+```text
+postman/README.md
+```
+
 ## Run and Test
 
 Java 17 or newer is required.
@@ -64,7 +121,9 @@ Java 17 or newer is required.
 .\mvnw.cmd spring-boot:run
 ```
 
-Tests use an in-memory H2 database in Oracle compatibility mode, so a local Oracle instance is not required for the test suite.
+Tests use an in-memory H2 database in Oracle compatibility mode and an in-memory
+cache manager, so local Oracle and Redis instances are not required for the test
+suite.
 
 Swagger UI is available at `http://localhost:8080/swagger-ui/index.html` while the application is running.
 

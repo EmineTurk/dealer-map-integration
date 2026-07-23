@@ -4,7 +4,9 @@ import com.turkcell.stock_service.application.dto.ProductResponse;
 import com.turkcell.stock_service.application.dto.StockResponse;
 import com.turkcell.stock_service.application.service.ProductService;
 import com.turkcell.stock_service.application.service.ProductStockService;
+import com.turkcell.stock_service.application.service.StockUpdateService;
 import com.turkcell.stock_service.domain.exception.ProductNotFoundException;
+import com.turkcell.stock_service.domain.exception.StockNotFoundException;
 import com.turkcell.stock_service.domain.model.StockLevel;
 import com.turkcell.stock_service.domain.model.StoreType;
 import org.junit.jupiter.api.Test;
@@ -15,9 +17,14 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,11 +41,14 @@ class ApiContractControllerTest {
     @MockBean
     private ProductStockService productStockService;
 
+    @MockBean
+    private StockUpdateService stockUpdateService;
+
     @Test
     void shouldAllowFrontendCorsPreflight() throws Exception {
-        mockMvc.perform(options("/products")
+        mockMvc.perform(options("/products/1/stores/10/stock")
                         .header("Origin", "http://localhost:5173")
-                        .header("Access-Control-Request-Method", "GET"))
+                        .header("Access-Control-Request-Method", "PUT"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(
                         "Access-Control-Allow-Origin",
@@ -46,7 +56,7 @@ class ApiContractControllerTest {
                 ))
                 .andExpect(header().string(
                         "Access-Control-Allow-Methods",
-                        "GET,OPTIONS"
+                        "GET,PUT,OPTIONS"
                 ));
     }
 
@@ -116,6 +126,51 @@ class ApiContractControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Product not found: id=99"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void shouldUpdateStockAccordingToContract() throws Exception {
+        mockMvc.perform(put("/products/1/stores/10/stock")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                { "quantity": 4 }
+                                """))
+                .andExpect(status().isNoContent());
+
+        verify(stockUpdateService).updateStock(1L, 10L, 4);
+    }
+
+    @Test
+    void shouldRejectNegativeStockQuantityWithSharedApiError() throws Exception {
+        mockMvc.perform(put("/products/1/stores/10/stock")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                { "quantity": -1 }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Quantity must be zero or greater"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verifyNoInteractions(stockUpdateService);
+    }
+
+    @Test
+    void shouldReturnSharedApiErrorWhenStockRecordDoesNotExist() throws Exception {
+        doThrow(new StockNotFoundException(1L, 999L))
+                .when(stockUpdateService)
+                .updateStock(1L, 999L, 4);
+
+        mockMvc.perform(put("/products/1/stores/999/stock")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                { "quantity": 4 }
+                                """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message")
+                        .value("Stock not found: productId=1, storeId=999"))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 }
