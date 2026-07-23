@@ -1,5 +1,6 @@
 package com.turkcell.stock_service.application.service;
 
+import com.turkcell.stock_service.application.dto.ProductResponse;
 import com.turkcell.stock_service.application.port.out.ProductQueryPort;
 import com.turkcell.stock_service.domain.model.Product;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ class ProductServiceTest {
         ProductService productService = new ProductService(productQueryPort);
 
         assertThat(productService.getAllProducts())
-                .extracting(product -> product.id())
+                .extracting(ProductResponse::id)
                 .containsExactly(1L, 2L);
     }
 }

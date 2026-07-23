@@ -1,19 +1,26 @@
 package com.turkcell.stock_service.presentation.controller;
 
+import com.turkcell.stock_service.application.dto.StockUpdateRequest;
 import com.turkcell.stock_service.application.dto.StockResponse;
 import com.turkcell.stock_service.application.service.ProductStockService;
+import com.turkcell.stock_service.application.service.StockUpdateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Positive;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -28,9 +35,14 @@ import java.util.List;
 public class ProductStockController {
 
     private final ProductStockService productStockService;
+    private final StockUpdateService stockUpdateService;
 
-    public ProductStockController(ProductStockService productStockService) {
+    public ProductStockController(
+            ProductStockService productStockService,
+            StockUpdateService stockUpdateService
+    ) {
         this.productStockService = productStockService;
+        this.stockUpdateService = stockUpdateService;
     }
 
     @GetMapping
@@ -63,5 +75,32 @@ public class ProductStockController {
             double radius
     ) {
         return productStockService.getStoresByProductId(productId, lat, lng, radius);
+    }
+
+    @PutMapping("/{storeId}/stock")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+            summary = "Bayi stok miktarini gunceller",
+            description = "Mevcut urun-bayi stok kaydinin mutlak miktarini gunceller."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Stok basariyla guncellendi"),
+            @ApiResponse(responseCode = "400", description = "Gecersiz stok miktari"),
+            @ApiResponse(responseCode = "404", description = "Urun veya stok kaydi bulunamadi")
+    })
+    public void updateStock(
+            @PathVariable
+            @Positive(message = "Urun ID degeri pozitif olmalidir")
+            Long productId,
+
+            @PathVariable
+            @Positive(message = "Bayi ID degeri pozitif olmalidir")
+            Long storeId,
+
+            @Valid
+            @RequestBody
+            StockUpdateRequest request
+    ) {
+        stockUpdateService.updateStock(productId, storeId, request.quantity());
     }
 }

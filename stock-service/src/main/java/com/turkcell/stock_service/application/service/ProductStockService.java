@@ -8,8 +8,10 @@ import com.turkcell.stock_service.domain.exception.ProductNotFoundException;
 import com.turkcell.stock_service.domain.model.Stock;
 import com.turkcell.stock_service.domain.service.DistanceCalculator;
 import com.turkcell.stock_service.domain.service.StockLevelPolicy;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,10 @@ public class ProductStockService {
         this.stockLevelPolicy = stockLevelPolicy;
     }
 
+    @Cacheable(
+            cacheNames = "product-stores",
+            key = "#productId + ':' + #latitude + ':' + #longitude + ':' + #radius"
+    )
     public List<StockResponse> getStoresByProductId(
             Long productId,
             double latitude,
@@ -55,7 +61,7 @@ public class ProductStockService {
                 .toList();
 
         if (availableStocks.isEmpty()) {
-            return List.of();
+            return new ArrayList<>();
         }
 
         Map<Long, Stock> stockByStoreId = availableStocks.stream()
@@ -94,6 +100,6 @@ public class ProductStockService {
                 })
                 .filter(stockResponse -> stockResponse.distance() <= radius)
                 .sorted(Comparator.comparingDouble(StockResponse::distance))
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 }

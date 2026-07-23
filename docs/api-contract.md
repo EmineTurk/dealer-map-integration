@@ -258,6 +258,54 @@ Capability options for dropdowns / filters. (**capability-service**)
 ]
 ```
 
+### 3.8 `PUT /products/{productId}/stores/{storeId}/stock`
+Sets the absolute stock quantity for an existing product/store stock record.
+(**stock-service**)
+
+This operation is idempotent: sending the same quantity more than once leaves
+the resource in the same state. Raw quantity is accepted only as command input;
+it is never exposed by read endpoints.
+
+**Request:**
+```json
+{ "quantity": 4 }
+```
+
+`quantity` is required and must be zero or greater.
+
+**Response `204`:** empty body.
+
+**Response `400`** (invalid quantity):
+```json
+{
+  "status": 400,
+  "message": "Quantity must be zero or greater",
+  "timestamp": "2026-07-23T10:00:00Z"
+}
+```
+
+**Response `404`** (unknown product):
+```json
+{
+  "status": 404,
+  "message": "Product not found: id=99",
+  "timestamp": "2026-07-23T10:00:00Z"
+}
+```
+
+**Response `404`** (product exists but the stock record does not):
+```json
+{
+  "status": 404,
+  "message": "Stock not found: productId=1, storeId=999",
+  "timestamp": "2026-07-23T10:00:00Z"
+}
+```
+
+A successful update invalidates cached
+`GET /products/{id}/stores?lat=&lng=&radius=` results. A rejected or failed
+update does not evict the cache.
+
 ---
 
 ## 4. Relation to Frontend Mock Data

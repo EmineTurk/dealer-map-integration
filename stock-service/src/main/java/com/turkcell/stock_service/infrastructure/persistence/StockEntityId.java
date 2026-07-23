@@ -12,7 +12,13 @@ public class StockEntityId implements Serializable {
     private Long productId;
     private Long storeId;
 
+    @SuppressWarnings("unused") // Required by JPA for reflective construction.
     public StockEntityId() {
+    }
+
+    public StockEntityId(Long productId, Long storeId) {
+        this.productId = productId;
+        this.storeId = storeId;
     }
 
     @Override

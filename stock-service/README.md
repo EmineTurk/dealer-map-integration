@@ -2,8 +2,8 @@
 
 `stock-service` provides the product catalog and returns nearby stores that have a selected product in stock. Store master data is owned by `store-service` and is fetched with one bulk request.
 
-The implementation currently covers the project plan through Day 11, including
-Redis caching for the product catalog.
+The implementation currently covers the project plan through Day 12, including
+five-minute Redis caching and cache-consistent stock updates.
 
 ## Architecture
 
@@ -20,6 +20,7 @@ The code follows a layered, ports-and-adapters structure:
 ```http
 GET /products
 GET /products/{productId}/stores?lat=41.02&lng=29.01&radius=10
+PUT /products/{productId}/stores/{storeId}/stock
 GET /actuator/health
 ```
 
@@ -62,13 +63,19 @@ $env:STOCK_DB_PASSWORD = "your_password"
 
 ## Redis Cache
 
-`GET /products` is cached in Redis for one hour. The cache entry uses the
-service-specific key prefix `stock-service::products::` and the key `all`, so
-it does not collide with keys belonging to the other services.
+`GET /products/{productId}/stores` results are cached in Redis for five minutes.
+The cache key contains `productId`, `lat`, `lng`, and `radius`, so different
+searches do not share results. Entries use the service-specific key prefix
+`stock-service::product-stores::`.
 
-Product/store search results are intentionally not cached because they depend
-on current stock, coordinates, and radius. If Redis is temporarily unavailable,
-the product endpoint logs the cache error and continues by reading from Oracle.
+`GET /products` is not cached. If Redis is temporarily unavailable, the stock
+search logs the cache error and continues by reading from Oracle and
+`store-service`.
+
+A successful stock update evicts all `product-stores` entries after the
+database update completes. A rejected update does not evict the cache. Clearing
+the whole cache favors consistency; product-scoped eviction can be introduced
+later if the cache grows significantly.
 
 Start the shared Redis container from the repository root before running the
 service:
@@ -81,7 +88,28 @@ Useful checks:
 
 ```powershell
 docker exec turkcell-redis redis-cli ping
-docker exec turkcell-redis redis-cli --scan --pattern "stock-service::*"
+docker exec turkcell-redis redis-cli --scan --pattern "stock-service::product-stores::*"
+```
+
+## Stock Update
+
+Set the absolute quantity of an existing product/store stock record:
+
+```http
+PUT /products/1/stores/1/stock
+Content-Type: application/json
+
+{ "quantity": 4 }
+```
+
+The response is `204 No Content`. Quantity must be zero or greater. Read
+endpoints continue to expose only `stockLevel`, never raw quantity.
+
+The cumulative collection, local environment, and Day 12 invalidation scenario
+are documented in:
+
+```text
+postman/README.md
 ```
 
 ## Run and Test

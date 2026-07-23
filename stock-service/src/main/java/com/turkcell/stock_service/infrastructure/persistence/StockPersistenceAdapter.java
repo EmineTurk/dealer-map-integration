@@ -1,13 +1,15 @@
 package com.turkcell.stock_service.infrastructure.persistence;
 
+import com.turkcell.stock_service.application.port.out.StockCommandPort;
 import com.turkcell.stock_service.application.port.out.StockQueryPort;
 import com.turkcell.stock_service.domain.model.Stock;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Component
-public class StockPersistenceAdapter implements StockQueryPort {
+public class StockPersistenceAdapter implements StockQueryPort, StockCommandPort {
 
     private final StockRepository stockRepository;
     private final StockMapper stockMapper;
@@ -26,5 +28,11 @@ public class StockPersistenceAdapter implements StockQueryPort {
                 .stream()
                 .map(stockMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public boolean updateQuantity(Long productId, Long storeId, int quantity) {
+        return stockRepository.updateQuantity(productId, storeId, quantity) == 1;
     }
 }

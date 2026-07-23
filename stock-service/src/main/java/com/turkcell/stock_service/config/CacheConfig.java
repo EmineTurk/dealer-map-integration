@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.lang.NonNull;
 
 import java.time.Duration;
 
@@ -18,14 +19,14 @@ import java.time.Duration;
 @EnableCaching
 public class CacheConfig implements CachingConfigurer {
 
-    static final Duration PRODUCT_CACHE_TTL = Duration.ofHours(1);
+    static final Duration PRODUCT_STORE_CACHE_TTL = Duration.ofMinutes(5);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheConfig.class);
 
     @Bean
     RedisCacheConfiguration redisCacheConfiguration() {
         return RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(PRODUCT_CACHE_TTL)
+                .entryTtl(PRODUCT_STORE_CACHE_TTL)
                 .disableCachingNullValues()
                 .computePrefixWith(cacheName -> "stock-service::" + cacheName + "::")
                 .serializeValuesWith(RedisSerializationContext.SerializationPair
@@ -33,30 +34,42 @@ public class CacheConfig implements CachingConfigurer {
     }
 
     @Override
+    @NonNull
     public CacheErrorHandler errorHandler() {
         return new CacheErrorHandler() {
             @Override
-            public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
+            public void handleCacheGetError(
+                    @NonNull RuntimeException exception,
+                    @NonNull Cache cache,
+                    @NonNull Object key
+            ) {
                 logCacheError("read", exception, cache, key);
             }
 
             @Override
             public void handleCachePutError(
-                    RuntimeException exception,
-                    Cache cache,
-                    Object key,
-                    Object value
+                    @NonNull RuntimeException exception,
+                    @NonNull Cache cache,
+                    @NonNull Object key,
+                    @NonNull Object value
             ) {
                 logCacheError("write", exception, cache, key);
             }
 
             @Override
-            public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
+            public void handleCacheEvictError(
+                    @NonNull RuntimeException exception,
+                    @NonNull Cache cache,
+                    @NonNull Object key
+            ) {
                 logCacheError("evict", exception, cache, key);
             }
 
             @Override
-            public void handleCacheClearError(RuntimeException exception, Cache cache) {
+            public void handleCacheClearError(
+                    @NonNull RuntimeException exception,
+                    @NonNull Cache cache
+            ) {
                 logCacheError("clear", exception, cache, "all");
             }
         };

@@ -5,7 +5,7 @@ public class DistanceCalculator {
     private static final double EARTH_RADIUS_KM = 6371.0;
 
     public double calculate(
-            double userLatitude,    
+            double userLatitude,
             double userLongitude,
             double storeLatitude,
             double storeLongitude
