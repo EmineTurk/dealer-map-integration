@@ -136,6 +136,54 @@ Swagger UI is available at `http://localhost:8080/swagger-ui/index.html` while t
 Frontend CORS is centralized in the API Gateway. Direct browser access to the
 Stock Service is not part of the public application flow.
 
+## Docker Image
+
+The Day 16 image uses a multi-stage build. Maven and JDK 21 are available only
+in the build stage; the final image contains the executable JAR and a Java 21
+JRE. The application runs as the non-root `spring` user.
+
+Build the image from the `stock-service` directory:
+
+```powershell
+docker build -t stock-service:day16 .
+```
+
+Start Oracle and Redis from the repository root:
+
+```powershell
+docker compose up -d oracle redis
+docker compose ps
+```
+
+Run the Stock Service on the Compose network. This command expects
+`store-service` to be available on the host at port `8081`:
+
+```powershell
+docker run --rm --name stock-service-day16 `
+  --network dealer-map-integration_default `
+  -p 8080:8080 `
+  -e STOCK_DB_URL=jdbc:oracle:thin:@//oracle:1521/FREEPDB1 `
+  -e STOCK_DB_USERNAME=stock_app `
+  -e STOCK_DB_PASSWORD=StockApp123 `
+  -e REDIS_HOST=redis `
+  -e REDIS_PORT=6379 `
+  -e STORE_SERVICE_BASE_URL=http://host.docker.internal:8081 `
+  stock-service:day16
+```
+
+Verify the running container:
+
+```powershell
+curl.exe http://localhost:8080/actuator/health
+curl.exe http://localhost:8080/products
+docker image ls stock-service:day16
+```
+
+The first build downloads the base images and Maven dependencies. Subsequent
+builds reuse Docker layers while `pom.xml` and the relevant source files remain
+unchanged. `.dockerignore` keeps build output, IDE metadata, documentation, SQL,
+and Postman artifacts out of the build context.
+
 ## API Gateway
 
 Day 13 uses `api-gateway` as the public entry point on port `8085`. The
