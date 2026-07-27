@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Select, Tag, Empty, Button, Spin } from 'antd';
+import { Select, Tag, Empty, Button, Spin, Alert } from 'antd';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -9,7 +9,7 @@ import { StoreCard } from '../components/StoreCard';
 import { StoreMap } from '../components/StoreMap';
 import { StoreDetailsDrawer } from '../components/StoreDetailsDrawer';
 import type { Store, CapabilityType, CapabilityTypeOption, StoreCapabilityResult } from '../types/api';
-import { apiService } from '../api/client';
+import { apiService, apiStatus } from '../api/client';
 import './Pages.css';
 
 const { Option } = Select;
@@ -197,33 +197,49 @@ export const Transactions: React.FC = () => {
       <div className="locator-layout">
         {/* Sidebar Controls */}
         <aside className="locator-sidebar glass-panel">
+          {apiStatus.isUsingFallback && (
+            <Alert
+              message="Simülasyon Modu Aktif"
+              description="Gerçek API bağlantısı başarısız oldu (CORS veya Ağ Hatası). Sistem otomatik olarak Mock verilerine geçti."
+              type="warning"
+              showIcon
+              style={{ marginBottom: '1.25rem', borderRadius: '8px' }}
+            />
+          )}
+
           {locationError && (
-            <div className="location-fallback-panel" style={{ padding: '1rem', marginBottom: '1.25rem', border: '1px solid rgba(255, 199, 44, 0.3)', borderRadius: '8px', background: 'rgba(255, 199, 44, 0.03)' }}>
-              <div style={{ color: 'var(--turkcell-yellow)', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                ⚠️ Konum izni devre dışı. Lütfen bölge seçin:
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div>
-                  <label className="filter-label" style={{ fontSize: '0.7rem', display: 'block', marginBottom: '0.25rem' }}>İl</label>
-                  <Select defaultValue="Istanbul" style={{ width: '100%' }} disabled>
-                    <Option value="Istanbul">İstanbul</Option>
-                  </Select>
-                </div>
-                <div>
-                  <label className="filter-label" style={{ fontSize: '0.7rem', display: 'block', marginBottom: '0.25rem' }}>İlçe</label>
-                  <Select 
-                    placeholder="İlçe Seçin" 
-                    style={{ width: '100%' }}
-                    onChange={handleDistrictChange}
-                    value={selectedDistrict || undefined}
-                  >
-                    <Option value="Kadikoy">Kadıköy</Option>
-                    <Option value="Besiktas">Beşiktaş</Option>
-                    <Option value="Sisli">Şişli</Option>
-                    <Option value="Uskudar">Üsküdar</Option>
-                    <Option value="Fatih">Fatih</Option>
-                    <Option value="Beyoglu">Beyoğlu</Option>
-                  </Select>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <Alert
+                message="Konum İzni Yok"
+                description="Tarayıcı konum izni verilmedi. Varsayılan koordinatlar kullanılıyor. Lütfen bölge seçin:"
+                type="info"
+                showIcon
+                style={{ marginBottom: '0.75rem', borderRadius: '8px' }}
+              />
+              <div className="location-fallback-panel" style={{ padding: '0.75rem 1rem', border: '1px solid rgba(255, 199, 44, 0.2)', borderRadius: '8px', background: 'rgba(255, 199, 44, 0.02)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div>
+                    <label className="filter-label" style={{ fontSize: '0.7rem', display: 'block', marginBottom: '0.25rem' }}>İl</label>
+                    <Select defaultValue="Istanbul" style={{ width: '100%' }} disabled>
+                      <Option value="Istanbul">İstanbul</Option>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="filter-label" style={{ fontSize: '0.7rem', display: 'block', marginBottom: '0.25rem' }}>İlçe</label>
+                    <Select 
+                      placeholder="İlçe Seçin" 
+                      style={{ width: '100%' }}
+                      onChange={handleDistrictChange}
+                      value={selectedDistrict || undefined}
+                    >
+                      <Option value="Kadikoy">Kadıköy</Option>
+                      <Option value="Besiktas">Beşiktaş</Option>
+                      <Option value="Sisli">Şişli</Option>
+                      <Option value="Uskudar">Üsküdar</Option>
+                      <Option value="Fatih">Fatih</Option>
+                      <Option value="Beyoglu">Beyoğlu</Option>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -340,7 +356,17 @@ export const Transactions: React.FC = () => {
                 </div>
               ))
             ) : (
-              <Empty description="Seçilen kriterlere uygun bayi bulunamadı" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              <Empty 
+                description={
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Kriterlere Uygun Bayi Bulunamadı</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                      Seçtiğiniz filtreler ve işlem tipine uygun herhangi bir bayi bulunamadı. Lütfen başka filtreleri denemeyi deneyin.
+                    </div>
+                  </div>
+                } 
+                image={Empty.PRESENTED_IMAGE_SIMPLE} 
+              />
             )}
           </div>
         </aside>
