@@ -15,7 +15,7 @@ enum GeminiError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .missingAPIKey: return "Gemini API anahtarı ayarlanmamış (Secrets.swift'e bak)"
+        case .missingAPIKey: return "Gemini API anahtarı ayarlanmamış"
         case .invalidResponse(let status, let body): return "Sunucudan geçersiz yanıt geldi (HTTP \(status)): \(body)"
         case .emptyReply: return "Boş yanıt alındı"
         }
@@ -45,14 +45,6 @@ final class GeminiAPIClient {
         guard let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(Secrets.geminiAPIKey)") else {
             throw GeminiError.invalidResponse(status: -1, body: "Geçersiz URL")
         }
-
-        // Anahtarın tamamını asla loglamıyoruz — sadece son 4 karakteri, model adı ve
-        // anahtarı maskelenmiş URL. Bu çıktı Xcode konsolunda görünür, paylaşılması güvenlidir.
-        print("[GeminiAPIClient] model: \(model)")
-        print("[GeminiAPIClient] key (son 4 karakter): ...\(Secrets.geminiAPIKey.suffix(4))")
-        print("[GeminiAPIClient] key uzunluğu: \(Secrets.geminiAPIKey.count)")
-        print("[GeminiAPIClient] url: \(url.absoluteString.replacingOccurrences(of: Secrets.geminiAPIKey, with: "***"))")
-
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

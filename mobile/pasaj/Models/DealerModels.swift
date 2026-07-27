@@ -52,7 +52,8 @@ struct StoreWithDistance: Codable, Identifiable {
     let type: StoreType
     let phone: String
     let workingHours: String
-    let distance: Double
+    // Gerçek yol mesafesi hesaplandığında güncellenebilsin diye var (bkz. RouteDistanceCalculator).
+    var distance: Double
     let stockLevel: StockLevel?
 }
 

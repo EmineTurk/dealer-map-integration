@@ -59,10 +59,6 @@ enum MockData {
         CapabilityTypeOption(key: .BILL_PAYMENT, label: "Bill Payment"),
     ]
 
-    // İşlemler sekmesi (capability sorgusu): ilk 6 bayinin bu işlemi yapabildiği mock kabulü
-    // (Ataşehir ve Beyoğlu hariç), ama mesafe artık gerçek konumdan hesaplanıyor.
-    // stockLevel'ın hepsi bilerek nil: api-contract.md'de StoreCapabilityResult'ta bu alan yok,
-    // stok kavramı sadece Pasaj'a özgü.
     static func storesWithDistance(lat: Double, lng: Double, radius: Double) -> [StoreWithDistance] {
         let origin = CLLocation(latitude: lat, longitude: lng)
         return stores.prefix(6).compactMap { store in

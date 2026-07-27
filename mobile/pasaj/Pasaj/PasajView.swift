@@ -38,7 +38,7 @@ struct PasajView: View {
                 selectedStoreForDetail = viewModel.filteredStores.first { $0.id == newValue }
             }
             .sheet(item: $selectedStoreForDetail) { store in
-                StoreDetailView(store: store)
+                StoreDetailView(store: store, product: viewModel.selectedProduct)
             }
         }
     }

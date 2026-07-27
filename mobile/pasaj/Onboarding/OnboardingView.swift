@@ -1,11 +1,9 @@
 //
 //  OnboardingView.swift
-//  pasaj
+//
 //
 //  İlk açılışta bir kez gösterilen tanıtım akışı. Son sayfada konum izni
-//  isteniyor — kullanıcı "neden" istendiğini gördükten sonra izin verme
-//  olasılığı, arka planda sessizce istemekten daha yüksek.
-//
+//  isteniyor
 
 import SwiftUI
 
@@ -48,7 +46,10 @@ struct OnboardingView: View {
             VStack(spacing: 24) {
                 TabView(selection: $currentPage) {
                     ForEach(Array(onboardingPages.enumerated()), id: \.offset) { index, page in
-                        OnboardingPageView(page: page).tag(index)
+                        OnboardingPageView(page: page)
+                            .tag(index)
+                            .contentShape(Rectangle())
+                            .onTapGesture { advance() }
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))

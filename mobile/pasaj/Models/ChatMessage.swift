@@ -14,4 +14,6 @@ struct ChatMessage: Identifiable {
     let id = UUID()
     let role: Role
     let text: String
+    
+    var relatedTab: AppTab?
 }

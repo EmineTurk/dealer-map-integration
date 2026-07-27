@@ -59,6 +59,7 @@ struct ChatView: View {
             }
             .background(AppTheme.background)
             .navigationTitle("Sohbet")
+            .sensoryFeedback(.impact(weight: .light), trigger: viewModel.sendTick)
         }
     }
 
@@ -68,6 +69,7 @@ struct ChatView: View {
                 .focused($inputFocused)
                 .submitLabel(.send)
                 .onSubmit { Task { await viewModel.send() } }
+                .disabled(viewModel.isSending)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .background(AppTheme.surface)
@@ -89,26 +91,45 @@ struct ChatView: View {
 
 private struct ChatBubble: View {
     let message: ChatMessage
+    @Environment(TabRouter.self) private var tabRouter
 
     private var isUser: Bool { message.role == .user }
 
     var body: some View {
-        HStack {
-            if isUser { Spacer(minLength: 40) }
+        VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
+            HStack {
+                if isUser { Spacer(minLength: 40) }
 
-            Text(message.text)
-                .font(.subheadline)
-                .foregroundStyle(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(isUser ? AppTheme.accent : AppTheme.surface)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                Text(message.text)
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(isUser ? AppTheme.accent : AppTheme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
 
-            if !isUser { Spacer(minLength: 40) }
+                if !isUser { Spacer(minLength: 40) }
+            }
+
+            if let relatedTab = message.relatedTab {
+                Button {
+                    tabRouter.selectedTab = relatedTab
+                } label: {
+                    Label(
+                        relatedTab == .islemler ? "İşlemler'e Git" : "Pasaj'a Git",
+                        systemImage: relatedTab == .islemler ? "checklist" : "shippingbox"
+                    )
+                    .font(.caption.bold())
+                }
+                .buttonStyle(.glass)
+                .tint(AppTheme.gold)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
     }
 }
 
 #Preview {
     ChatView()
+        .environment(TabRouter())
 }

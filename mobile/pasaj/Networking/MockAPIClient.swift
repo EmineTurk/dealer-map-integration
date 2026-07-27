@@ -6,7 +6,6 @@
 import Foundation
 
 final class MockAPIClient: DealerAPIClient {
-    // Gerçek bir ağ isteği hissi vermesi için küçük bir gecikme (loading state'i test edebilesin diye).
     private let simulatedDelayNanoseconds: UInt64 = 400_000_000
 
     func fetchProducts() async throws -> [Product] {
@@ -37,5 +36,10 @@ final class MockAPIClient: DealerAPIClient {
     func fetchStores(ids: [Int]) async throws -> [Store] {
         try await Task.sleep(nanoseconds: simulatedDelayNanoseconds)
         return MockData.stores.filter { ids.contains($0.id) }
+    }
+
+    func subscribeToStockNotification(productId: Int, storeId: Int, email: String?, phone: String?) async throws {
+        try await Task.sleep(nanoseconds: simulatedDelayNanoseconds)
+        // Mock: gerçekte e-posta/SMS göndermiyor, sadece kaydı başarılı simüle ediyor.
     }
 }

@@ -59,6 +59,16 @@ final class LiveAPIClient: DealerAPIClient {
         return try await get([Store].self, from: "\(APIConfig.storeServiceBase)/stores?ids=\(idsParam)")
     }
 
+    // MARK: - Stok bildirimi
+
+    func subscribeToStockNotification(productId: Int, storeId: Int, email: String?, phone: String?) async throws {
+        throw ApiError(
+            status: 501,
+            message: "Backend'de stok bildirimi aboneliği için bir endpoint yok (api-contract.md'de tanımlı değil)",
+            timestamp: ISO8601DateFormatter().string(from: Date())
+        )
+    }
+
     // MARK: - Generic GET
 
     private func get<T: Decodable>(_ type: T.Type, from urlString: String) async throws -> T {

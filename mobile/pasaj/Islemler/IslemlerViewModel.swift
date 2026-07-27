@@ -45,7 +45,7 @@ final class IslemlerViewModel {
             result = result.filter { $0.type == storeTypeFilter }
         }
         if let selectedCity {
-            result = result.filter { $0.city == selectedCity.name }
+            result = result.filter { $0.city == selectedCity.backendName }
         }
         return result
     }
@@ -71,12 +71,13 @@ final class IslemlerViewModel {
         hasSearched = true
         let coordinate = userLocation ?? LocationManager.istanbulFallback
         do {
-            allStores = try await AppEnvironment.apiClient.fetchStores(
+            let stores = try await AppEnvironment.apiClient.fetchStores(
                 forCapability: selectedCapability.key,
                 lat: coordinate.latitude,
                 lng: coordinate.longitude,
                 radius: effectiveRadius
             )
+            allStores = await RouteDistanceCalculator.applyRouteDistances(to: stores, from: coordinate)
         } catch {
             errorMessage = error.localizedDescription
         }

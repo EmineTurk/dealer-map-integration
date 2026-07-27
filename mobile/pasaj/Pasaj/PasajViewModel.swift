@@ -53,7 +53,7 @@ final class PasajViewModel {
 
     var filteredStores: [StoreWithDistance] {
         guard let selectedCity else { return nearbyStores }
-        return nearbyStores.filter { $0.city == selectedCity.name }
+        return nearbyStores.filter { $0.city == selectedCity.backendName }
     }
 
     func loadProducts() async {
@@ -81,11 +81,12 @@ final class PasajViewModel {
         selectedProduct = nil
         let coordinate = effectiveCoordinate(userLocation: userLocation)
         do {
-            nearbyStores = try await AppEnvironment.apiClient.fetchAllStores(
+            let stores = try await AppEnvironment.apiClient.fetchAllStores(
                 lat: coordinate.latitude,
                 lng: coordinate.longitude,
                 radius: effectiveRadius
             )
+            nearbyStores = await RouteDistanceCalculator.applyRouteDistances(to: stores, from: coordinate)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -120,12 +121,13 @@ final class PasajViewModel {
         errorMessage = nil
         let coordinate = effectiveCoordinate(userLocation: userLocation)
         do {
-            nearbyStores = try await AppEnvironment.apiClient.fetchStores(
+            let stores = try await AppEnvironment.apiClient.fetchStores(
                 forProduct: product.id,
                 lat: coordinate.latitude,
                 lng: coordinate.longitude,
                 radius: effectiveRadius
             )
+            nearbyStores = await RouteDistanceCalculator.applyRouteDistances(to: stores, from: coordinate)
         } catch {
             errorMessage = error.localizedDescription
         }
