@@ -86,6 +86,7 @@ public class ProductStockController {
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Stok basariyla guncellendi"),
             @ApiResponse(responseCode = "400", description = "Gecersiz stok miktari"),
+            @ApiResponse(responseCode = "415", description = "Desteklenmeyen request content type"),
             @ApiResponse(responseCode = "404", description = "Urun veya stok kaydi bulunamadi")
     })
     public void updateStock(

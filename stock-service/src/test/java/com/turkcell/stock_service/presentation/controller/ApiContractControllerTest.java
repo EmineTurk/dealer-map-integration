@@ -12,7 +12,7 @@ import com.turkcell.stock_service.domain.model.StoreType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({ProductController.class, ProductStockController.class})
-@MockBean({
+@MockitoBean(types = {
         ProductService.class,
         ProductStockService.class,
         StockUpdateService.class
@@ -144,6 +144,34 @@ class ApiContractControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("Quantity must be zero or greater"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verifyNoInteractions(stockUpdateService);
+    }
+
+    @Test
+    void shouldRejectMalformedJsonWithSharedApiError() throws Exception {
+        mockMvc.perform(put("/products/1/stores/10/stock")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                { "quantity":
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Invalid request body"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verifyNoInteractions(stockUpdateService);
+    }
+
+    @Test
+    void shouldRejectUnsupportedMediaTypeWithSharedApiError() throws Exception {
+        mockMvc.perform(put("/products/1/stores/10/stock")
+                        .contentType("text/plain")
+                        .content("quantity=4"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.status").value(415))
+                .andExpect(jsonPath("$.message").value("Unsupported media type"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
         verifyNoInteractions(stockUpdateService);

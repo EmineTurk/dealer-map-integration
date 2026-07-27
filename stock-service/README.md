@@ -2,8 +2,9 @@
 
 `stock-service` provides the product catalog and returns nearby stores that have a selected product in stock. Store master data is owned by `store-service` and is fetched with one bulk request.
 
-The implementation currently covers the project plan through Day 12, including
-five-minute Redis caching and cache-consistent stock updates.
+The implementation covers the project plan through Day 15. It includes
+five-minute Redis caching, cache-consistent stock updates, Gateway-based
+cross-cutting concerns, graceful API errors, and repeatable Demo #3 checks.
 
 ## Architecture
 
@@ -118,8 +119,8 @@ postman/README.md
 
 ## Run and Test
 
-Java 21 is recommended. The current Mockito/ByteBuddy test stack is not
-compatible with Java 26.
+Java 21 is required. Maven Enforcer stops the build immediately with a clear
+message if another JDK is selected.
 
 ```powershell
 .\mvnw.cmd test
@@ -149,3 +150,26 @@ PUT http://localhost:8085/api/pasaj/products/1/stores/1/stock
 
 Gateway verification is available in
 `postman/stock-service-day13-gateway.postman_collection.json`.
+
+## Day 14 Resilience
+
+Day 14 verifies that failure responses remain useful through the Gateway:
+
+- malformed JSON returns `400` with the shared `ApiError` body;
+- unsupported request content types return `415` with the shared `ApiError`
+  body;
+- supplied and generated correlation IDs are present on error responses;
+- the Redis rate limiter protects only the stock write route;
+- product read requests remain available after a write burst is limited.
+
+Run the repeatable Collection Runner scenario in
+`postman/stock-service-day14-resilience.postman_collection.json`. The rate-limit
+probe sends an invalid quantity, so it exercises the write route without
+changing stock data.
+
+## Day 15 Demo
+
+Demo #3 uses the Day 13 collection for the successful stock/cache flow and the
+Day 14 collection for resilience checks. Run both Maven suites with Java 21
+before the live demo. The expected automated baseline is 35 Stock Service tests
+and 11 API Gateway tests.
