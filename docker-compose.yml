@@ -9,8 +9,8 @@
 #   Host: localhost
 #   Port: 1521
 #   Service: FREEPDB1
-#   User: store_app
-#   Password: StoreApp123
+#   Store user: store_app / StoreApp123
+#   Stock user: stock_app / StockApp123
 
 services:
   oracle:
@@ -19,13 +19,16 @@ services:
     ports:
       - "1521:1521"
     environment:
-      ORACLE_PASSWORD: OraclePassword123
-      APP_USER: store_app
-      APP_USER_PASSWORD: StoreApp123
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:-OraclePassword123}
     volumes:
       - oracle-data:/opt/oracle/oradata
-      # İlk bootstrap'ta çalışır (container yeniden oluşturulunca değil, volume silinince)
-      - ./store-service/sql:/container-entrypoint-initdb.d:ro
+      # Init scripts run only when oracle-data is initialized for the first time.
+      - ./docker/oracle/init/01_create_app_users.sql:/container-entrypoint-initdb.d/01_create_app_users.sql:ro
+      - ./store-service/sql/01_create_store_table.sql:/container-entrypoint-initdb.d/10_create_store_table.sql:ro
+      - ./store-service/sql/02_alter_store_day7_columns.sql:/container-entrypoint-initdb.d/11_alter_store_day7_columns.sql:ro
+      - ./store-service/sql/03_create_store_capability.sql:/container-entrypoint-initdb.d/12_create_store_capability.sql:ro
+      - ./stock-service/sql/schema.sql:/container-entrypoint-initdb.d/20_create_stock_schema.sql:ro
+      - ./stock-service/sql/data.sql:/container-entrypoint-initdb.d/21_seed_stock_data.sql:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
       interval: 30s

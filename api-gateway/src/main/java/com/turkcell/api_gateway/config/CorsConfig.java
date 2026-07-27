@@ -11,12 +11,12 @@ import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 /**
- * Day 13: CORS is centralized here (cross-cutting concern).
- * Downstream store/capability services no longer declare CORS.
- * stock-service CORS removal is Backend A's follow-up.
+ * Centralizes browser CORS policy for all downstream services.
  */
 @Configuration
 public class CorsConfig {
+
+	public static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
 
 	@Bean
 	public CorsWebFilter corsWebFilter(
@@ -27,8 +27,9 @@ public class CorsConfig {
 				.filter(s -> !s.isEmpty())
 				.toList();
 		config.setAllowedOrigins(origins);
-		config.setAllowedMethods(List.of("GET", "PUT", "POST", "DELETE", "OPTIONS"));
+		config.setAllowedMethods(List.of("GET", "PUT", "OPTIONS"));
 		config.setAllowedHeaders(List.of("*"));
+		config.setExposedHeaders(List.of(CORRELATION_ID_HEADER));
 		config.setMaxAge(3600L);
 
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

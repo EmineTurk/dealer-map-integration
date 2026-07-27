@@ -23,19 +23,21 @@ kod ve bu collection'lar güncellenir.
 
 ## Ön Koşullar
 
-1. Oracle ve Redis çalışıyor olmalı.
+1. `docker compose up -d oracle redis` ile `turkcell-oracle` ve Redis çalışıyor olmalı.
 2. Store Service `http://localhost:8081` üzerinde çalışmalı.
 3. Stock Service `http://localhost:8080` üzerinde çalışmalı.
-4. Gateway `http://localhost:8083` üzerinde çalışmalı.
-5. `stock_app` şemasında `sql/schema.sql` ve `sql/data.sql` uygulanmış olmalı.
+4. API Gateway `http://localhost:8085` üzerinde çalışmalı.
+5. `stock_app` şeması bulunmalı. Temiz volume kurulumunda Compose,
+   `sql/schema.sql` ve `sql/data.sql` dosyalarını otomatik uygular.
 
 Servis kontrolleri:
 
 ```powershell
 docker exec turkcell-redis redis-cli ping
+docker exec turkcell-oracle healthcheck.sh
 Invoke-RestMethod http://localhost:8081/actuator/health
 Invoke-RestMethod http://localhost:8080/actuator/health
-Invoke-RestMethod http://localhost:8083/actuator/health
+Invoke-RestMethod http://localhost:8085/actuator/health
 ```
 
 ## Postman'e Import
@@ -137,5 +139,5 @@ Day 13 collection'ını Gateway, Stock Service, Store Service, Oracle ve Redis
 5. Cache invalidation sonrasında ilgili bayinin `LOW` döndüğünü doğrular.
 6. Test verisini bozmamak için miktarı tekrar seed değeri `10` yapar.
 
-Gateway base URL environment içinde `gatewayBaseUrl=http://localhost:8083`
+Gateway base URL environment içinde `gatewayBaseUrl=http://localhost:8085`
 olarak tanımlıdır.

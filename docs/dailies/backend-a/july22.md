@@ -2,14 +2,15 @@
 
 ## Bugün ne yaptım
 
-Mikroservislerin önünde tek giriş noktası olacak `gateway-service` uygulamasını
-oluşturdum. Gateway'i `8083` portunda çalışacak şekilde yapılandırdım; mevcut
+Mikroservislerin önünde tek giriş noktası olacak ortak `api-gateway` uygulamasına
+Backend A özelliklerini ekledim. Gateway'i `8085` portunda çalışacak şekilde
+yapılandırdım; mevcut
 servis portlarını değiştirmedim:
 
 - Stock Service: `8080`
 - Store Service: `8081`
 - Capability Service: `8082`
-- API Gateway: `8083`
+- API Gateway: `8085`
 
 Spring Cloud Gateway üzerinde `/api/pasaj/**` route'unu tanımladım. Gateway,
 bu prefix ile gelen istekleri Stock Service'e yönlendirirken `StripPrefix=2`
@@ -42,10 +43,10 @@ Route prefix dönüşümü, query parametrelerinin korunması, CORS preflight,
 correlation ID üretimi ve mevcut correlation ID'nin aktarılması için otomatik
 testler yazdım. Rate limiter filtresinin yalnızca stok yazma route'unda olduğunu
 ve Gateway Actuator yönetim endpoint'inin dışarı açılmadığını da doğruladım.
-Toplam 6 Gateway testi başarıyla tamamlandı.
+Toplam 11 Gateway testi başarıyla tamamlandı.
 
 Canlı entegrasyon kontrolünde Gateway health endpoint'inden `UP` cevabı aldım.
-Ürün kataloğunu ve yakın bayi stoklarını `8083` portundaki `/api/pasaj`
+Ürün kataloğunu ve yakın bayi stoklarını `8085` portundaki `/api/pasaj`
 prefix'i üzerinden sorguladım. Sonuçların radius içinde filtrelendiğini,
 mesafeye göre sıralandığını ve `stockLevel` alanıyla döndüğünü doğruladım.
 Store Service kapalıyken ortak `503 Store service is unavailable` cevabını,

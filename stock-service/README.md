@@ -40,8 +40,8 @@ Local defaults are provided and can be overridden with environment variables:
 | Variable | Default |
 |---|---|
 | `STOCK_DB_URL` | `jdbc:oracle:thin:@//localhost:1521/FREEPDB1` |
-| `STOCK_DB_USERNAME` | Required |
-| `STOCK_DB_PASSWORD` | Required |
+| `STOCK_DB_USERNAME` | `stock_app` |
+| `STOCK_DB_PASSWORD` | `StockApp123` |
 | `STORE_SERVICE_BASE_URL` | `http://localhost:8081` |
 | `STORE_SERVICE_CONNECT_TIMEOUT` | `2s` |
 | `STORE_SERVICE_READ_TIMEOUT` | `3s` |
@@ -52,13 +52,16 @@ Local defaults are provided and can be overridden with environment variables:
 | `FRONTEND_ALLOWED_ORIGIN` | `http://localhost:5173` |
 | `SERVER_PORT` | `8080` |
 
-Oracle schema and contract-aligned sample data are available in `src/main/resources/schema.sql` and `src/main/resources/data.sql`.
+Oracle schema and contract-aligned sample data are available in
+`sql/schema.sql` and `sql/data.sql`. On a fresh `oracle-data` volume, Docker
+Compose runs these scripts automatically for the shared `turkcell-oracle`
+container.
 
-For a local PowerShell session, set the required credentials before starting the application:
+The local defaults match Docker Compose. Override them only when needed:
 
 ```powershell
-$env:STOCK_DB_USERNAME = "your_user"
-$env:STOCK_DB_PASSWORD = "your_password"
+$env:STOCK_DB_USERNAME = "stock_app"
+$env:STOCK_DB_PASSWORD = "StockApp123"
 ```
 
 ## Redis Cache
@@ -77,11 +80,12 @@ database update completes. A rejected update does not evict the cache. Clearing
 the whole cache favors consistency; product-scoped eviction can be introduced
 later if the cache grows significantly.
 
-Start the shared Redis container from the repository root before running the
-service:
+Start the shared Oracle and Redis containers from the repository root before
+running the service:
 
 ```powershell
-docker compose up -d redis
+docker compose up -d oracle redis
+docker compose ps
 ```
 
 Useful checks:
@@ -114,7 +118,8 @@ postman/README.md
 
 ## Run and Test
 
-Java 17 or newer is required.
+Java 21 is recommended. The current Mockito/ByteBuddy test stack is not
+compatible with Java 26.
 
 ```powershell
 .\mvnw.cmd test
@@ -127,21 +132,19 @@ suite.
 
 Swagger UI is available at `http://localhost:8080/swagger-ui/index.html` while the application is running.
 
-For local frontend integration, CORS allows the Vite development origin
-`http://localhost:5173` by default. Override `FRONTEND_ALLOWED_ORIGIN` when the
-frontend is served from a different origin. CORS can be centralized at the API
-Gateway when the gateway is introduced.
+Frontend CORS is centralized in the API Gateway. Direct browser access to the
+Stock Service is not part of the public application flow.
 
 ## API Gateway
 
-Day 13 adds `gateway-service` as the public entry point on port `8083`. The
+Day 13 uses `api-gateway` as the public entry point on port `8085`. The
 Stock Service remains on port `8080`; the Gateway removes the `/api/pasaj`
 prefix and forwards the request internally:
 
 ```text
-GET http://localhost:8083/api/pasaj/products
-GET http://localhost:8083/api/pasaj/products/1/stores?lat=41.02&lng=29.01&radius=10
-PUT http://localhost:8083/api/pasaj/products/1/stores/1/stock
+GET http://localhost:8085/api/pasaj/products
+GET http://localhost:8085/api/pasaj/products/1/stores?lat=41.02&lng=29.01&radius=10
+PUT http://localhost:8085/api/pasaj/products/1/stores/1/stock
 ```
 
 Gateway verification is available in
