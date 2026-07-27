@@ -17,6 +17,7 @@ ayrı collection olarak korunur.
 | `stock-service-day12.postman_collection.json` | Stok güncelleme sonrası cache invalidation senaryosu |
 | `stock-service-day13-gateway.postman_collection.json` | Gateway routing, correlation ID, stok güncelleme ve cache kontrolü |
 | `stock-service-day14-resilience.postman_collection.json` | Ortak hata sözleşmesi, correlation ID ve write rate-limit kontrolü |
+| `stock-service-gateway-cache-rate-limit-demo.postman_collection.json` | Gateway uçtan uca akış, cold/warm cache süre karşılaştırması ve 429 kanıtı |
 
 API alanları, status kodları ve hata gövdeleri için ana kaynak
 `../../docs/api-contract.md` dosyasıdır. Contract değişirse önce contract, sonra
@@ -58,6 +59,13 @@ Day 13 Gateway testi için ayrıca
 
 Day 14 resilience testi için ayrıca
 `stock-service-day14-resilience.postman_collection.json` dosyasını import et.
+
+Gateway + cache süresi + rate-limit sunumu için
+`stock-service-gateway-cache-rate-limit-demo.postman_collection.json` dosyasını
+import et ve Collection Runner ile bir kez çalıştır. Collection her çalıştırmada
+benzersiz bir radius üreterek ilk GET'i cold cache, birebir aynı ikinci GET'i
+warm cache olarak ölçer. Ardından veri değiştirmeyen geçersiz PUT isteklerini
+429 görülene kadar tekrarlar ve en son read route'un açık kaldığını doğrular.
 
 ## Günlere Göre Kapsam
 
