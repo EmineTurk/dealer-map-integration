@@ -35,6 +35,17 @@ Bağlantı: `store_app` / `StoreApp123` @ `FREEPDB1` (port 1521)
 
 İlk açılışta `StoreDataLoader` tablo boşsa 15 İstanbul bayisini seed eder.
 
+Yerel varsayılanlar tek `turkcell-oracle` container'ına bağlanır:
+
+| Değişken | Varsayılan |
+|---|---|
+| `STORE_DB_URL` | `jdbc:oracle:thin:@//localhost:1521/FREEPDB1` |
+| `STORE_DB_USERNAME` | `store_app` |
+| `STORE_DB_PASSWORD` | `StoreApp123` |
+
+Eski `oracle-db` aynı anda başlatılmamalıdır; iki container da host port
+`1521`i kullanamaz.
+
 ## Gün 10-13: CORS → Gateway, Redis
 
 - **Gün 11:** Bayi sorguları Redis'te **1 saat** tutulur (`store-service::` prefix).

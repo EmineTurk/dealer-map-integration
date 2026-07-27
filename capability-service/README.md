@@ -35,6 +35,20 @@ cd capability-service && mvnw.cmd spring-boot:run
 
 Swagger: http://localhost:8082/swagger-ui.html
 
+## Oracle bağlantısı
+
+Servis, Store Service ile aynı `turkcell-oracle` instance'ını ve `store_app`
+şemasını kullanır:
+
+| Değişken | Varsayılan |
+|---|---|
+| `CAPABILITY_DB_URL` | `jdbc:oracle:thin:@//localhost:1521/FREEPDB1` |
+| `CAPABILITY_DB_USERNAME` | `store_app` |
+| `CAPABILITY_DB_PASSWORD` | `StoreApp123` |
+
+Eski `oracle-db` kapalı kalmalıdır; aktif yerel Oracle container'ı
+`turkcell-oracle`dır.
+
 ## Örnek istek
 
 ```http

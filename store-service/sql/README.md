@@ -26,6 +26,10 @@ jdbc:oracle:thin:@//localhost:1521/FREEPDB1
 
 > Seed: Spring `StoreDataLoader` / `CapabilityDataLoader` tablo boşsa doldurur.
 
+Bu dosyalar kök `docker-compose.yml` tarafından tek `turkcell-oracle`
+container'ının ilk volume kurulumunda çalıştırılır. Aynı Oracle instance'ında
+`stock_app` şeması da `stock-service/sql/` dosyalarıyla hazırlanır.
+
 ## DBeaver
 
 1. `docker compose up -d oracle`

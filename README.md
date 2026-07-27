@@ -12,8 +12,9 @@
 
 ```txt
 dealer-map-integration
-├── docker-compose.yml   (Oracle Free)
-├── gateway-service      (port 8083 — API Gateway)
+├── docker-compose.yml   (Oracle Free + Redis)
+├── docker/oracle/init   (shared Oracle users)
+├── api-gateway          (port 8085 — ortak API Gateway)
 ├── stock-service        (port 8080 — Pasaj / Backend A)
 ├── store-service        (port 8081 — Bayi master data / Backend B)
 ├── capability-service   (port 8082 — İşlem yetkinliği / Backend B)
@@ -21,16 +22,28 @@ dealer-map-integration
 └── docs
 ```
 
-## Local Oracle
+## Local Infrastructure
+
+Java 21 is recommended for all backend services. The current Mockito/ByteBuddy
+test stack is not compatible with Java 26.
 
 ```bash
-docker compose up -d oracle
+docker compose up -d oracle redis
+docker compose ps
 ```
 
-- Port: `1521` / Service: `FREEPDB1`
-- App user: `store_app` / `StoreApp123`
-- SQL: `store-service/sql/`
+- Oracle container: `turkcell-oracle`
+- Oracle port/service: `1521` / `FREEPDB1`
+- Store schema: `store_app` / `StoreApp123`
+- Stock schema: `stock_app` / `StockApp123`
+- Redis container/port: `turkcell-redis` / `6379`
+- Oracle init: `docker/oracle/init/`, `store-service/sql/`, `stock-service/sql/`
 - API contract: [`docs/api-contract.md`](docs/api-contract.md)
+
+Only `turkcell-oracle` should use host port `1521`. A legacy `oracle-db`
+container is not part of Compose and must remain stopped after its data has
+been migrated. Do not remove an Oracle container or the `oracle-data` volume
+without a verified backup.
 
 ## Backend B (store + capability)
 

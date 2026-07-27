@@ -8,7 +8,7 @@
   "variable": [
     {
       "key": "gatewayBaseUrl",
-      "value": "http://localhost:8083"
+      "value": "http://localhost:8085"
     },
     {
       "key": "productId",

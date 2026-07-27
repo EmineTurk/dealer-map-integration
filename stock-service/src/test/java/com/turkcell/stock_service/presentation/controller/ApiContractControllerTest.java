@@ -23,41 +23,34 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({ProductController.class, ProductStockController.class})
+@MockBean({
+        ProductService.class,
+        ProductStockService.class,
+        StockUpdateService.class
+})
 class ApiContractControllerTest {
 
+    private final MockMvc mockMvc;
+    private final ProductService productService;
+    private final ProductStockService productStockService;
+    private final StockUpdateService stockUpdateService;
+
     @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
-    private ProductService productService;
-
-    @MockBean
-    private ProductStockService productStockService;
-
-    @MockBean
-    private StockUpdateService stockUpdateService;
-
-    @Test
-    void shouldAllowFrontendCorsPreflight() throws Exception {
-        mockMvc.perform(options("/products/1/stores/10/stock")
-                        .header("Origin", "http://localhost:5173")
-                        .header("Access-Control-Request-Method", "PUT"))
-                .andExpect(status().isOk())
-                .andExpect(header().string(
-                        "Access-Control-Allow-Origin",
-                        "http://localhost:5173"
-                ))
-                .andExpect(header().string(
-                        "Access-Control-Allow-Methods",
-                        "GET,PUT,OPTIONS"
-                ));
+    ApiContractControllerTest(
+            MockMvc mockMvc,
+            ProductService productService,
+            ProductStockService productStockService,
+            StockUpdateService stockUpdateService
+    ) {
+        this.mockMvc = mockMvc;
+        this.productService = productService;
+        this.productStockService = productStockService;
+        this.stockUpdateService = stockUpdateService;
     }
 
     @Test

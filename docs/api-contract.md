@@ -16,13 +16,15 @@ Field names (`id`, `name`, `workingHours`, …) match the frontend mock data and
 | 404 usage | Only when a specific ID does not exist |
 | Error format | Shared `ApiError` body on every service |
 
-External clients use API Gateway on port `8083`. The Gateway owns the public
+External clients use the shared `api-gateway` on port `8085`. The Gateway owns the public
 prefixes and forwards requests to the services without changing their internal
 ports:
 
 | Public prefix | Target service |
 |---|---|
 | `/api/pasaj/**` | `stock-service:8080` |
+| `/api/stores/**` | `store-service:8081` |
+| `/api/comtr/**` | `capability-service:8082` |
 
 For example, `GET /api/pasaj/products` is forwarded internally as
 `GET /products`. Service-to-service calls continue to use the internal service

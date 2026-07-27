@@ -3,28 +3,60 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      routes:
-        # Pasaj (Backend A) — /api/pasaj/products → stock-service /products
-        - id: pasaj-stock
-          uri: ${STOCK_SERVICE_URI:http://localhost:8080}
-          predicates:
-            - Path=/api/pasaj/**
-          filters:
-            - StripPrefix=2
-        # Bayi master data (Backend B) — /api/stores/** → store-service /stores/**
-        - id: stores
-          uri: ${STORE_SERVICE_URI:http://localhost:8081}
-          predicates:
-            - Path=/api/stores/**
-          filters:
-            - StripPrefix=1
-        # com.tr (Backend B) — /api/comtr/capabilities → capability-service /capabilities
-        - id: comtr-capability
-          uri: ${CAPABILITY_SERVICE_URI:http://localhost:8082}
-          predicates:
-            - Path=/api/comtr/**
-          filters:
-            - StripPrefix=2
+      server:
+        webflux:
+          routes:
+            # Stock writes are rate limited separately from read requests.
+            - id: pasaj-stock-write
+              order: -1
+              uri: ${STOCK_SERVICE_URI:http://localhost:8080}
+              predicates:
+                - Path=/api/pasaj/products/*/stores/*/stock
+                - Method=PUT
+              filters:
+                - StripPrefix=2
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@clientIpKeyResolver}"
+                    redis-rate-limiter.replenishRate: ${STOCK_WRITE_RATE_PER_SECOND:5}
+                    redis-rate-limiter.burstCapacity: ${STOCK_WRITE_BURST_CAPACITY:10}
+                    redis-rate-limiter.requestedTokens: 1
+
+            # Pasaj (Backend A) — /api/pasaj/products → stock-service /products
+            - id: pasaj-stock
+              order: 0
+              uri: ${STOCK_SERVICE_URI:http://localhost:8080}
+              predicates:
+                - Path=/api/pasaj/**
+              filters:
+                - StripPrefix=2
+            # Bayi master data (Backend B) — /api/stores/** → store-service /stores/**
+            - id: stores
+              uri: ${STORE_SERVICE_URI:http://localhost:8081}
+              predicates:
+                - Path=/api/stores/**
+              filters:
+                - StripPrefix=1
+            # com.tr (Backend B) — /api/comtr/capabilities → capability-service /capabilities
+            - id: comtr-capability
+              uri: ${CAPABILITY_SERVICE_URI:http://localhost:8082}
+              predicates:
+                - Path=/api/comtr/**
+              filters:
+                - StripPrefix=2
+
+          httpclient:
+            connect-timeout: ${GATEWAY_CONNECT_TIMEOUT_MS:2000}
+            response-timeout: ${GATEWAY_RESPONSE_TIMEOUT:5s}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT:2s}
+      timeout: ${REDIS_TIMEOUT:2s}
+      repositories:
+        enabled: false
 
 server:
   port: ${GATEWAY_PORT:8085}
@@ -33,9 +65,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info
 
 app:
   cors:
-    # Single place for frontend origins (moved from microservices — Day 13)
-    allowed-origins: http://localhost:5173,http://localhost:3000
+    allowed-origins: ${FRONTEND_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+  rate-limit:
+    trusted-proxy-count: ${TRUSTED_PROXY_COUNT:0}
