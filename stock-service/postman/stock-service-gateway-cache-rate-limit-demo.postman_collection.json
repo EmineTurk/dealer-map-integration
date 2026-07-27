@@ -1,0 +1,348 @@
+{
+  "info": {
+    "_postman_id": "bd891440-6467-4e8b-a96d-469c93f56c10",
+    "name": "Stock Service - Gateway Cache and Rate Limit Demo",
+    "description": "End-to-end demo through API Gateway: verifies routing, compares a cold and warm request with the exact same URL, and produces a deterministic 429 rate-limit proof. Run with Collection Runner in the numbered order.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "gatewayBaseUrl",
+      "value": "http://localhost:8085"
+    },
+    {
+      "key": "productId",
+      "value": "1"
+    },
+    {
+      "key": "storeId",
+      "value": "1"
+    },
+    {
+      "key": "lat",
+      "value": "40.9901"
+    },
+    {
+      "key": "lng",
+      "value": "29.0253"
+    },
+    {
+      "key": "cacheProbeRadius",
+      "value": "10"
+    },
+    {
+      "key": "coldResponseTimeMs",
+      "value": "0"
+    },
+    {
+      "key": "coldResponseBody",
+      "value": ""
+    },
+    {
+      "key": "cacheSpeedupMs",
+      "value": "0"
+    },
+    {
+      "key": "rateLimitAttempt",
+      "value": "0"
+    },
+    {
+      "key": "rateLimitMaxAttempts",
+      "value": "30"
+    },
+    {
+      "key": "rateLimitObserved",
+      "value": "false"
+    },
+    {
+      "key": "rateLimit429Attempt",
+      "value": "not-observed"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Gateway Health and Demo Reset",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Let tokens from a previous local run refill before starting the burst.",
+              "setTimeout(function () {}, 2500);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const uniquePart = Date.now() % 100000;",
+              "const uniqueRadius = (10 + uniquePart / 10000000).toFixed(7);",
+              "pm.collectionVariables.set('cacheProbeRadius', uniqueRadius);",
+              "pm.collectionVariables.set('coldResponseTimeMs', '0');",
+              "pm.collectionVariables.set('coldResponseBody', '');",
+              "pm.collectionVariables.set('cacheSpeedupMs', '0');",
+              "pm.collectionVariables.set('rateLimitAttempt', '0');",
+              "pm.collectionVariables.set('rateLimitObserved', 'false');",
+              "pm.collectionVariables.set('rateLimit429Attempt', 'not-observed');",
+              "pm.test('Gateway is healthy', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('UP');",
+              "});",
+              "console.log('Demo cache radius:', uniqueRadius);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gatewayBaseUrl}}/actuator/health",
+          "host": [
+            "{{gatewayBaseUrl}}"
+          ],
+          "path": [
+            "actuator",
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "02 - Cold Cache Request Through Gateway",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Cold request passes through Gateway and returns stock data', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json()).to.be.an('array');",
+              "});",
+              "pm.test('Gateway adds a correlation ID', function () {",
+              "  pm.expect(pm.response.headers.get('X-Correlation-Id')).to.be.a('string').and.not.empty;",
+              "});",
+              "pm.collectionVariables.set('coldResponseTimeMs', String(pm.response.responseTime));",
+              "pm.collectionVariables.set('coldResponseBody', pm.response.text());",
+              "console.log('COLD CACHE:', pm.response.responseTime + ' ms');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Correlation-Id",
+            "value": "cache-demo-cold"
+          }
+        ],
+        "url": {
+          "raw": "{{gatewayBaseUrl}}/api/pasaj/products/{{productId}}/stores?lat={{lat}}&lng={{lng}}&radius={{cacheProbeRadius}}",
+          "host": [
+            "{{gatewayBaseUrl}}"
+          ],
+          "path": [
+            "api",
+            "pasaj",
+            "products",
+            "{{productId}}",
+            "stores"
+          ],
+          "query": [
+            {
+              "key": "lat",
+              "value": "{{lat}}"
+            },
+            {
+              "key": "lng",
+              "value": "{{lng}}"
+            },
+            {
+              "key": "radius",
+              "value": "{{cacheProbeRadius}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "03 - Warm Cache Request - Exact Same URL",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const coldMs = Number(pm.collectionVariables.get('coldResponseTimeMs'));",
+              "const warmMs = pm.response.responseTime;",
+              "const speedupMs = coldMs - warmMs;",
+              "const speedupPercent = coldMs > 0 ? ((speedupMs / coldMs) * 100).toFixed(1) : '0.0';",
+              "pm.collectionVariables.set('cacheSpeedupMs', String(speedupMs));",
+              "pm.test('Warm request returns the same response body', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.text()).to.eql(pm.collectionVariables.get('coldResponseBody'));",
+              "});",
+              "pm.test('CACHE EVIDENCE | cold=' + coldMs + 'ms, warm=' + warmMs + 'ms, gain=' + speedupMs + 'ms (' + speedupPercent + '%)', function () {",
+              "  pm.expect(warmMs, 'cold=' + coldMs + 'ms, warm=' + warmMs + 'ms').to.be.below(coldMs);",
+              "});",
+              "console.log('CACHE PROOF: cold=' + coldMs + ' ms, warm=' + warmMs + ' ms, gain=' + speedupMs + ' ms (' + speedupPercent + '%)');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Correlation-Id",
+            "value": "cache-demo-warm"
+          }
+        ],
+        "url": {
+          "raw": "{{gatewayBaseUrl}}/api/pasaj/products/{{productId}}/stores?lat={{lat}}&lng={{lng}}&radius={{cacheProbeRadius}}",
+          "host": [
+            "{{gatewayBaseUrl}}"
+          ],
+          "path": [
+            "api",
+            "pasaj",
+            "products",
+            "{{productId}}",
+            "stores"
+          ],
+          "query": [
+            {
+              "key": "lat",
+              "value": "{{lat}}"
+            },
+            {
+              "key": "lng",
+              "value": "{{lng}}"
+            },
+            {
+              "key": "radius",
+              "value": "{{cacheProbeRadius}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "04 - Rate Limit Burst Until 429",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const attempt = Number(pm.collectionVariables.get('rateLimitAttempt') || '0') + 1;",
+              "const maxAttempts = Number(pm.collectionVariables.get('rateLimitMaxAttempts') || '30');",
+              "pm.collectionVariables.set('rateLimitAttempt', String(attempt));",
+              "pm.test('Write reaches validation or is rate limited', function () {",
+              "  pm.expect([400, 429]).to.include(pm.response.code);",
+              "});",
+              "if (pm.response.code === 429) {",
+              "  pm.collectionVariables.set('rateLimitObserved', 'true');",
+              "  pm.collectionVariables.set('rateLimit429Attempt', String(attempt));",
+              "  pm.test('RATE LIMIT EVIDENCE | HTTP 429 at attempt #' + attempt, function () {",
+              "    pm.response.to.have.status(429);",
+              "  });",
+              "  console.log('RATE LIMIT PROOF: 429 received at attempt #' + attempt);",
+              "}",
+              "const observed = pm.collectionVariables.get('rateLimitObserved') === 'true';",
+              "if (!observed && attempt < maxAttempts) {",
+              "  pm.execution.setNextRequest(pm.info.requestName);",
+              "} else {",
+              "  pm.test('Gateway returns 429 during the write burst', function () {",
+              "    pm.expect(observed, 'No 429 in ' + maxAttempts + ' attempts').to.eql(true);",
+              "  });",
+              "  pm.execution.setNextRequest('05 - Read Route and Demo Summary');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Correlation-Id",
+            "value": "rate-limit-demo"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": -1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{gatewayBaseUrl}}/api/pasaj/products/{{productId}}/stores/{{storeId}}/stock",
+          "host": [
+            "{{gatewayBaseUrl}}"
+          ],
+          "path": [
+            "api",
+            "pasaj",
+            "products",
+            "{{productId}}",
+            "stores",
+            "{{storeId}}",
+            "stock"
+          ]
+        }
+      }
+    },
+    {
+      "name": "05 - Read Route and Demo Summary",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const coldMs = Number(pm.collectionVariables.get('coldResponseTimeMs'));",
+              "const gainMs = Number(pm.collectionVariables.get('cacheSpeedupMs'));",
+              "const warmMs = coldMs - gainMs;",
+              "const limitAttempt = pm.collectionVariables.get('rateLimit429Attempt');",
+              "pm.test('Read route remains available after write rate limit', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json()).to.be.an('array');",
+              "});",
+              "pm.test('Demo produced both cache and rate-limit evidence', function () {",
+              "  pm.expect(gainMs, 'cold=' + coldMs + 'ms, warm=' + warmMs + 'ms').to.be.above(0);",
+              "  pm.expect(pm.collectionVariables.get('rateLimitObserved')).to.eql('true');",
+              "});",
+              "pm.test('SUMMARY | cache ' + coldMs + 'ms -> ' + warmMs + 'ms; first 429 attempt #' + limitAttempt + '; read route HTTP 200', function () {",
+              "  pm.expect(gainMs).to.be.above(0);",
+              "  pm.expect(limitAttempt).to.not.eql('not-observed');",
+              "});",
+              "console.log('DEMO SUMMARY: cold=' + coldMs + ' ms, warm=' + warmMs + ' ms, cache gain=' + gainMs + ' ms, first 429 attempt=' + limitAttempt);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gatewayBaseUrl}}/api/pasaj/products",
+          "host": [
+            "{{gatewayBaseUrl}}"
+          ],
+          "path": [
+            "api",
+            "pasaj",
+            "products"
+          ]
+        }
+      }
+    }
+  ]
+}
