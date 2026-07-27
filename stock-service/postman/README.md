@@ -1,6 +1,6 @@
 # Stock Service Postman Dokümantasyonu
 
-Bu klasör Stock Service'in güncel API contract'ını ve Day 1-13 boyunca
+Bu klasör Stock Service'in güncel API contract'ını ve Day 1-15 boyunca
 geliştirilen davranışları Postman üzerinden doğrulamak için kullanılır.
 
 Geçmiş günler için aynı endpoint'leri tekrar eden ayrı collection dosyaları
@@ -16,6 +16,7 @@ ayrı collection olarak korunur.
 | `stock-service-local.postman_environment.json` | Local URL, ürün, bayi ve geo parametreleri |
 | `stock-service-day12.postman_collection.json` | Stok güncelleme sonrası cache invalidation senaryosu |
 | `stock-service-day13-gateway.postman_collection.json` | Gateway routing, correlation ID, stok güncelleme ve cache kontrolü |
+| `stock-service-day14-resilience.postman_collection.json` | Ortak hata sözleşmesi, correlation ID ve write rate-limit kontrolü |
 
 API alanları, status kodları ve hata gövdeleri için ana kaynak
 `../../docs/api-contract.md` dosyasıdır. Contract değişirse önce contract, sonra
@@ -55,6 +56,9 @@ Day 12 cache invalidation testi için ayrıca
 Day 13 Gateway testi için ayrıca
 `stock-service-day13-gateway.postman_collection.json` dosyasını import et.
 
+Day 14 resilience testi için ayrıca
+`stock-service-day14-resilience.postman_collection.json` dosyasını import et.
+
 ## Günlere Göre Kapsam
 
 | Gün | Postman kanıtı |
@@ -71,6 +75,8 @@ Day 13 Gateway testi için ayrıca
 | Day 11 | Aynı geo GET çağrısında Redis cache anahtarının oluşması |
 | Day 12 | PUT ile stok güncelleme ve eski cache sonucunun silinmesi |
 | Day 13 | Gateway route, CORS/correlation altyapısı ve rate-limited PUT akışı |
+| Day 14 | Gateway üzerinden ortak hata cevapları, correlation ID ve gerçek `429` kontrolü |
+| Day 15 | Day 13 başarılı akışı ile Day 14 resilience akışının Demo #3 öncesi birlikte çalıştırılması |
 
 Day 3, 4, 6 ve 9 gibi iç mimari günleri yalnızca HTTP response'tan tamamen
 kanıtlanamaz. Bu günlerde Postman sonucu; kod, SQL ve otomatik testlerle birlikte
@@ -141,3 +147,43 @@ Day 13 collection'ını Gateway, Stock Service, Store Service, Oracle ve Redis
 
 Gateway base URL environment içinde `gatewayBaseUrl=http://localhost:8085`
 olarak tanımlıdır.
+
+## Day 14 Resilience Kontrolü
+
+Day 14 collection'ını **Collection Runner** ile tek iteration çalıştır. Collection:
+
+1. Senaryo değişkenlerini sıfırlar ve Gateway health sonucunu kontrol eder.
+2. `404`, eksik parametre `400`, bozuk JSON `400` ve desteklenmeyen media type
+   `415` cevaplarının ortak `ApiError` formatında kaldığını doğrular.
+3. Hata cevaplarında gönderilen veya Gateway'in ürettiği correlation ID'yi
+   kontrol eder.
+4. Stok verisini değiştirmeyen, geçersiz quantity isteklerinden oluşan bir write
+   burst gönderir; Stock Service'ten gelen `400` cevaplarının sonunda Gateway'den
+   `429 Too Many Requests` görülmesini bekler.
+5. Write limiti dolduktan sonra `GET /api/pasaj/products` çağrısının hâlâ `200`
+   döndüğünü doğrular.
+
+Yerel testi deterministik ve kısa hale getirmek için Gateway'i şu geçici
+değerlerle başlatabilirsin:
+
+```powershell
+$env:STOCK_WRITE_RATE_PER_SECOND = "1"
+$env:STOCK_WRITE_BURST_CAPACITY = "2"
+cd ..\api-gateway
+.\mvnw.cmd spring-boot:run
+```
+
+Collection Runner kullanılmazsa `setNextRequest` döngüsü çalışmaz ve gerçek
+rate-limit burst senaryosu oluşmaz.
+
+## Day 15 Demo #3 Kontrolü
+
+Canlı demo öncesinde Java 21 ile Stock Service ve API Gateway testlerini
+çalıştır. Ardından sırasıyla:
+
+1. Day 13 collection ile başarılı Gateway route, stok güncelleme ve cache
+   invalidation akışını çalıştır.
+2. Day 14 collection ile ortak hata cevaplarını ve rate limiting davranışını
+   çalıştır.
+3. Son kontrolde ürün 1 / bayi 1 stok miktarının seed değeri `10` olduğunu
+   doğrula.

@@ -310,6 +310,18 @@ it is never exposed by read endpoints.
 }
 ```
 
+Malformed JSON uses the same error shape with the message
+`Invalid request body`.
+
+**Response `415`** (unsupported request content type):
+```json
+{
+  "status": 415,
+  "message": "Unsupported media type",
+  "timestamp": "2026-07-27T10:00:00Z"
+}
+```
+
 **Response `404`** (unknown product):
 ```json
 {

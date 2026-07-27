@@ -27,6 +27,15 @@
 @REM   MVNW_VERBOSE - true: enable verbose log; others: silence the output
 @REM ----------------------------------------------------------------------------
 
+@REM This repository is pinned to Java 21. DEALER_MAP_JAVA_HOME can override
+@REM automatic IntelliJ JDK discovery when JDK 21 is installed elsewhere.
+@IF NOT "%DEALER_MAP_JAVA_HOME%"=="" (
+  @SET "JAVA_HOME=%DEALER_MAP_JAVA_HOME%"
+) ELSE (
+  @FOR /D %%J IN ("%USERPROFILE%\.jdks\corretto-21*") DO @IF EXIST "%%~fJ\bin\java.exe" @SET "JAVA_HOME=%%~fJ"
+)
+@IF EXIST "%JAVA_HOME%\bin\java.exe" @SET "PATH=%JAVA_HOME%\bin;%PATH%"
+
 @IF "%__MVNW_ARG0_NAME__%"=="" (SET __MVNW_ARG0_NAME__=%~nx0)
 @SET __MVNW_CMD__=
 @SET __MVNW_ERROR__=

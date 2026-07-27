@@ -6,7 +6,7 @@ aynı giriş noktasından yönetilir.
 
 ## Teknoloji sürümleri
 
-- Java 17 veya 21
+- Java 21
 - Spring Boot 3.5.16
 - Spring Cloud 2025.0.3
 - Spring Cloud Gateway 4.3.5

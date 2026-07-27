@@ -24,8 +24,19 @@ dealer-map-integration
 
 ## Local Infrastructure
 
-Java 21 is recommended for all backend services. The current Mockito/ByteBuddy
-test stack is not compatible with Java 26.
+Java 21 is required for all backend services. Every Maven module enforces this
+version so an unsupported JDK fails at the start of the build.
+
+On Windows, each `mvnw.cmd` automatically selects an IntelliJ-installed
+`%USERPROFILE%\.jdks\corretto-21*` JDK before starting Maven. If Java 21 is
+installed elsewhere, set `DEALER_MAP_JAVA_HOME` to that JDK directory. This
+project-specific setting takes precedence over the machine-wide Java `PATH`.
+
+Verify the selected runtime from any backend module:
+
+```powershell
+.\mvnw.cmd -version
+```
 
 ```bash
 docker compose up -d oracle redis
