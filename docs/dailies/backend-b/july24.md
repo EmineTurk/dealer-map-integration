@@ -11,4 +11,4 @@ Rate limiting in gateway de olmasının nedeni tek giriş noktasında IP veya is
 - Redis down olduğunda rate limiter fail-open mı fail-closed mı olmalı?
 
 ## Yarın standup'ta sormak istediğim
-Demo 3 te B akışını (com.tr capability ve store cache) gateway üzerinden cold/warm süre farkıyla mı yoksa yalnızca happy-path ile mi göstereceğiz?
+
