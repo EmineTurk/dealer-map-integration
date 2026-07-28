@@ -78,7 +78,7 @@ export const StoreMap: React.FC<StoreMapProps> = ({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <RecenterMap center={center} zoom={zoom} />
-      {stores.map(item => (
+      {Array.isArray(stores) && stores.map(item => (
         <Marker
           key={item.id}
           position={[item.latitude, item.longitude]}
