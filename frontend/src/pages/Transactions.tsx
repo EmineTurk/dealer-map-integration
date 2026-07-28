@@ -261,7 +261,7 @@ export const Transactions: React.FC = () => {
                     status={errors.capabilityType ? 'error' : ''}
                   >
                     <Option value="">-- İşlem Seçiniz --</Option>
-                    {capabilitiesList.map(cap => (
+                    {Array.isArray(capabilitiesList) && capabilitiesList.map(cap => (
                       <Option key={cap.key} value={cap.key}>
                         {cap.label}
                       </Option>
@@ -327,7 +327,7 @@ export const Transactions: React.FC = () => {
               <div style={{ textAlign: 'center', padding: '2.5rem 0' }}>
                 <Spin tip="Uygun bayiler aranıyor..." size="large" />
               </div>
-            ) : eligibleStores.length > 0 ? (
+            ) : (Array.isArray(eligibleStores) && eligibleStores.length > 0) ? (
               eligibleStores.map(item => (
                 <div
                   key={item.id}

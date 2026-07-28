@@ -84,19 +84,19 @@ export const Pasaj: React.FC = () => {
   };
 
   // Derive list of categories and brands dynamically based on loaded products
-  const categories = ['ALL', ...Array.from(new Set(products.map(p => p.category)))];
-  const brands = ['ALL', ...Array.from(new Set(products.map(p => getProductBrand(p.name))))];
+  const categories = ['ALL', ...Array.from(new Set(Array.isArray(products) ? products.map(p => p.category) : []))];
+  const brands = ['ALL', ...Array.from(new Set(Array.isArray(products) ? products.map(p => getProductBrand(p.name)) : []))];
 
   // Filtered products list based on selected category and brand
-  const filteredProducts = products.filter(p => {
+  const filteredProducts = Array.isArray(products) ? products.filter(p => {
     const matchesCategory = selectedCategory === 'ALL' || p.category === selectedCategory;
     const matchesBrand = selectedBrand === 'ALL' || getProductBrand(p.name) === selectedBrand;
     return matchesCategory && matchesBrand;
-  });
+  }) : [];
 
   // Auto-select first matching product if the current selection is filtered out
   useEffect(() => {
-    if (filteredProducts.length > 0) {
+    if (Array.isArray(filteredProducts) && filteredProducts.length > 0) {
       const isStillAvailable = filteredProducts.some(p => p.id === selectedProductId);
       if (!isStillAvailable) {
         setSelectedProductId(filteredProducts[0].id);

@@ -91,6 +91,9 @@ export const apiService = {
   getProducts: async (): Promise<Product[]> => {
     try {
       const response = await stockApi.get<Product[]>('/products');
+      if (!Array.isArray(response.data)) {
+        throw new Error('API response is not a valid JSON array.');
+      }
       return response.data;
     } catch (error) {
       handleApiError('stock-service', VITE_STOCK_SERVICE_URL, error);
@@ -108,6 +111,9 @@ export const apiService = {
       const response = await stockApi.get<StoreStockResult[]>(`/products/${productId}/stores`, {
         params: { lat, lng, radius }
       });
+      if (!Array.isArray(response.data)) {
+        throw new Error('API response is not a valid JSON array.');
+      }
       return response.data;
     } catch (error) {
       handleApiError('stock-service', VITE_STOCK_SERVICE_URL, error);
@@ -134,6 +140,9 @@ export const apiService = {
   getCapabilityTypes: async (): Promise<CapabilityTypeOption[]> => {
     try {
       const response = await capabilityApi.get<CapabilityTypeOption[]>('/capabilities/types');
+      if (!Array.isArray(response.data)) {
+        throw new Error('API response is not a valid JSON array.');
+      }
       return response.data;
     } catch (error) {
       handleApiError('capability-service', VITE_CAPABILITY_SERVICE_URL, error);
@@ -158,6 +167,9 @@ export const apiService = {
       const response = await capabilityApi.get<StoreCapabilityResult[]>(`/capabilities/${type}/stores`, {
         params: { lat, lng, radius, ...filters }
       });
+      if (!Array.isArray(response.data)) {
+        throw new Error('API response is not a valid JSON array.');
+      }
       return response.data;
     } catch (error) {
       handleApiError('capability-service', VITE_CAPABILITY_SERVICE_URL, error);
