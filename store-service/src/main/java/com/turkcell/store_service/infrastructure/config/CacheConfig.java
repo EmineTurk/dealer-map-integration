@@ -2,6 +2,7 @@ package com.turkcell.store_service.infrastructure.config;
 
 import java.time.Duration;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +17,7 @@ public class CacheConfig {
 	private static final Duration STORE_CACHE_TTL = Duration.ofHours(1);
 
 	@Bean
+	@ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = true)
 	RedisCacheConfiguration redisCacheConfiguration() {
 		return RedisCacheConfiguration.defaultCacheConfig()
 				.entryTtl(STORE_CACHE_TTL)

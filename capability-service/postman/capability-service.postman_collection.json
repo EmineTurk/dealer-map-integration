@@ -59,6 +59,20 @@
         "method": "GET",
         "url": "{{baseUrl}}/capabilities/UNKNOWN_TYPE/stores?lat=41.02&lng=29.01&radius=10"
       }
+    },
+    {
+      "name": "Assign Capability (cache evict)",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/capabilities/BILL_PAYMENT/stores/1"
+      }
+    },
+    {
+      "name": "Remove Capability (cache evict)",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/capabilities/BILL_PAYMENT/stores/1"
+      }
     }
   ],
   "variable": [

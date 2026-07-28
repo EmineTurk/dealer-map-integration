@@ -2,11 +2,15 @@ package com.turkcell.capability_service.presentation.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.turkcell.capability_service.application.dto.CapabilityTypeOption;
@@ -71,5 +75,33 @@ public class CapabilityController {
 			@RequestParam(required = false) String workingHours,
 			@RequestParam(required = false) String status) {
 		return capabilityService.findStoresByCapability(type, lat, lng, radius, workingHours, status);
+	}
+
+	@PutMapping("/{type}/stores/{storeId}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@Operation(summary = "Bayiye yetkinlik atar", description = "Cache invalidate edilir")
+	@ApiResponses({
+			@ApiResponse(responseCode = "204", description = "Atandı"),
+			@ApiResponse(responseCode = "404", description = "Geçersiz işlem tipi"),
+			@ApiResponse(responseCode = "400", description = "Geçersiz storeId")
+	})
+	public void assignCapability(
+			@PathVariable @NotBlank String type,
+			@PathVariable @Positive(message = "Bayi ID değeri pozitif olmalıdır") Long storeId) {
+		capabilityService.assignCapability(type, storeId);
+	}
+
+	@DeleteMapping("/{type}/stores/{storeId}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@Operation(summary = "Bayiden yetkinlik kaldırır", description = "Cache invalidate edilir")
+	@ApiResponses({
+			@ApiResponse(responseCode = "204", description = "Kaldırıldı"),
+			@ApiResponse(responseCode = "404", description = "Geçersiz işlem tipi"),
+			@ApiResponse(responseCode = "400", description = "Geçersiz storeId")
+	})
+	public void removeCapability(
+			@PathVariable @NotBlank String type,
+			@PathVariable @Positive(message = "Bayi ID değeri pozitif olmalıdır") Long storeId) {
+		capabilityService.removeCapability(type, storeId);
 	}
 }
