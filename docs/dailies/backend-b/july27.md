@@ -1,7 +1,7 @@
-# Gün 15 - Demo 3 gateway cache ve code review refactor
+# Gün 15 - Gateway cache ve code review refactor
 
 ## Bugün ne yaptım
-Week 3 Demo 3 için Backend B akışını gateway (localhost:8085) üzerinden toplayan Postman collection hazırladım (capability-service/postman/backend-b-day15-demo). Akış: gateway health, /api/stores bölgesel liste, capability geo cold istek, aynı URL ile warm istek (Redis TTL 1 saat; süre farkı loglanır), store status update ile CacheEvict. Day 14 resilience collection ile birlikte 404 ApiError, correlation ID ve read route ların write rate limit inden etkilenmediği demo checklist ine girdi. Ayrıca code review geri bildirimlerine göre refactor tamamlandı:
+Backend B akışını gateway (localhost:8085) üzerinden toplayan Postman collection hazırladım (capability-service/postman/backend-b-day15-demo). Akış: gateway health, /api/stores bölgesel liste, capability geo cold istek, aynı URL ile warm istek (Redis TTL 1 saat; süre farkı loglanır), store status update ile CacheEvict. Day 14 resilience collection ile birlikte 404 ApiError, correlation ID ve read route ların write rate limit inden etkilenmediği demo checklist ine girdi. Ayrıca code review geri bildirimlerine göre refactor tamamlandı:
 
 1. Hassas bilgiler env e taşındı: store-service ve capability-service application.yaml içinde DB URL, username, password ve Redis host/port ${STORE_DB_*} / ${CAPABILITY_DB_*} / ${REDIS_HOST} gibi ortam değişkenlerinden okunuyor; proje köküne .env.example eklendi.
 2. Transaction içindeki HTTP dışarı alındı: capability-service te store-service RestClient çağrısı @Transactional kapsamından çıkarıldı; DB ID sorgusu CapabilityPersistenceService te kaldı, HTTP sonrası filtre/mesafe hesaplaması transaction dışında.
@@ -19,7 +19,6 @@ Capability verisi az değiştiği için TTL in 1 saat seçilmesi stoktaki 5 dk T
 
 ## Ne anlamadım / kafama takılanlar
 - CacheEvict allEntries=true yerine key bazlı invalidation ne zaman gerekir?
-- Demo sonrası Newman ve CI için Oracle/Redis test verisini nasıl izole ederiz?
 
 ## Yarın standup'ta sormak istediğim
 Gün 16 da store-service ve capability-service için multi-stage Dockerfile ları aynı anda mı, yoksa önce store sonra capability sırasıyla mı build edelim?
