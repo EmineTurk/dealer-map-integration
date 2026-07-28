@@ -31,13 +31,14 @@ struct PasajView: View {
             .navigationTitle("Pasaj")
             .task {
                 await viewModel.loadProducts()
-                await viewModel.loadOverview(userLocation: locationManager.userLocation)
+                let coordinate = await locationManager.resolvedLocation()
+                await viewModel.loadOverview(userLocation: coordinate)
             }
             .onChange(of: selectedStoreId) { _, newValue in
-                selectedStoreForDetail = viewModel.nearbyStores.first { $0.id == newValue }
+                selectedStoreForDetail = viewModel.filteredStores.first { $0.id == newValue }
             }
             .sheet(item: $selectedStoreForDetail) { store in
-                StoreDetailView(store: store)
+                StoreDetailView(store: store, product: viewModel.selectedProduct)
             }
         }
     }
@@ -47,6 +48,25 @@ struct PasajView: View {
             Text("Filtrele")
                 .font(.headline)
                 .foregroundStyle(.white)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Konum")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.7))
+                Picker("", selection: $viewModel.selectedCity) {
+                    Text("Yakınımda").tag(TurkishCity?.none)
+                    ForEach(TurkishCities.all) { city in
+                        Text(city.name).tag(TurkishCity?.some(city))
+                    }
+                }
+                .pickerStyle(.menu)
+                .tint(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppTheme.background)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Kategori")
@@ -139,7 +159,7 @@ struct PasajView: View {
             }
 
             StoreMapView(
-                stores: viewModel.nearbyStores,
+                stores: viewModel.filteredStores,
                 userLocation: locationManager.userLocation,
                 selectedStoreId: $selectedStoreId
             )
@@ -160,17 +180,17 @@ struct PasajView: View {
                     systemImage: "wifi.slash",
                     description: Text(errorMessage)
                 )
-            } else if viewModel.nearbyStores.isEmpty {
+            } else if viewModel.filteredStores.isEmpty {
                 ContentUnavailableView("Bayi bulunamadı", systemImage: "shippingbox")
             } else if viewModel.selectedProduct != nil {
                 // Genel bakışta (ürün seçilmeden önce) liste gösterilmez, harita yeterli —
                 // liste yalnızca somut bir ürün araması sonucunda (stok detayıyla) anlamlı.
-                Text("Bulunan Mağazalar (\(viewModel.nearbyStores.count))")
+                Text("Bulunan Mağazalar (\(viewModel.filteredStores.count))")
                     .font(.headline)
                     .foregroundStyle(.white)
 
                 VStack(spacing: 10) {
-                    ForEach(viewModel.nearbyStores) { store in
+                    ForEach(viewModel.filteredStores) { store in
                         Button {
                             selectedStoreForDetail = store
                         } label: {

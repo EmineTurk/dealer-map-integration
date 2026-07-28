@@ -26,7 +26,8 @@ struct IslemlerView: View {
             .navigationTitle("İşlemler")
             .task {
                 await viewModel.loadOptions()
-                await viewModel.search(userLocation: locationManager.userLocation)
+                let coordinate = await locationManager.resolvedLocation()
+                await viewModel.search(userLocation: coordinate)
             }
             .onChange(of: selectedStoreId) { _, newValue in
                 selectedStoreForDetail = viewModel.filteredStores.first { $0.id == newValue }
@@ -50,6 +51,15 @@ struct IslemlerView: View {
                 )) {
                     ForEach(viewModel.capabilityOptions) { option in
                         Text(option.label).tag(Optional(option))
+                    }
+                }
+            }
+            
+            labeledPicker(title: "Konum") {
+                Picker("", selection: $viewModel.selectedCity) {
+                    Text("Yakınımda").tag(TurkishCity?.none)
+                    ForEach(TurkishCities.all) { city in
+                        Text(city.name).tag(TurkishCity?.some(city))
                     }
                 }
             }

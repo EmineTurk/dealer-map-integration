@@ -2,3 +2,7 @@
 xcuserdata/
 DerivedData/
 *.xcuserstate
+
+# API anahtarları gibi sırlar buraya yazılmaz — Secrets.swift.example'ı kopyalayıp
+# kendi anahtarınla doldur.
+pasaj/Secrets.swift

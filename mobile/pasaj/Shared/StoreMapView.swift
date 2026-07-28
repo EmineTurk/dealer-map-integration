@@ -35,17 +35,22 @@ struct StoreMapView: View {
         }
         .onAppear { fitCameraToStores() }
         .onChange(of: stores.map(\.id)) { _, _ in fitCameraToStores() }
+        // Konum, bayi araması tamamlanmadan önce gelebilir (ya da hiç bayi bulunamayabilir) —
+        // bu durumlarda da harita sabit İstanbul'da kalmayıp kullanıcının konumuna kaysın.
+        .onChange(of: userLocation?.latitude) { _, _ in fitCameraToStores() }
+        .onChange(of: userLocation?.longitude) { _, _ in fitCameraToStores() }
     }
 
     // Kullanıcının konumu bayilerden çok uzaksa (ör. simülatörün varsayılan konumu),
     // haritayı sabit bir noktaya değil, gösterilecek pin'lerin tamamını kapsayacak şekilde kadrajlar.
+    // Bayi bulunamasa bile (ör. mock veri dışındaki bir şehirdeysen) harita yine kullanıcının
+    // bulunduğu konumu göstermeli — sabit İstanbul varsayılanında kalmamalı.
     private func fitCameraToStores() {
-        guard !stores.isEmpty else { return }
-
         var coordinates = stores.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
         if let userLocation {
             coordinates.append(userLocation)
         }
+        guard !coordinates.isEmpty else { return }
 
         let lats = coordinates.map(\.latitude)
         let lngs = coordinates.map(\.longitude)

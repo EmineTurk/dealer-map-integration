@@ -28,7 +28,7 @@ final class LiveAPIClient: DealerAPIClient {
         try await get([Product].self, from: "\(APIConfig.stockServiceBase)/products")
     }
 
-    func fetchAllStores() async throws -> [StoreWithDistance] {
+    func fetchAllStores(lat: Double, lng: Double, radius: Double) async throws -> [StoreWithDistance] {
         throw ApiError(
             status: 501,
             message: "Backend'de tüm bayileri listeleyen bir endpoint yok (api-contract.md'de tanımlı değil)",
@@ -57,6 +57,16 @@ final class LiveAPIClient: DealerAPIClient {
     func fetchStores(ids: [Int]) async throws -> [Store] {
         let idsParam = ids.map(String.init).joined(separator: ",")
         return try await get([Store].self, from: "\(APIConfig.storeServiceBase)/stores?ids=\(idsParam)")
+    }
+
+    // MARK: - Stok bildirimi
+
+    func subscribeToStockNotification(productId: Int, storeId: Int, email: String?, phone: String?) async throws {
+        throw ApiError(
+            status: 501,
+            message: "Backend'de stok bildirimi aboneliği için bir endpoint yok (api-contract.md'de tanımlı değil)",
+            timestamp: ISO8601DateFormatter().string(from: Date())
+        )
     }
 
     // MARK: - Generic GET

@@ -6,6 +6,7 @@
 //  UI geliştirmeye devam etmek için.
 //
 
+import CoreLocation
 import Foundation
 
 extension StoreWithDistance {
@@ -58,31 +59,41 @@ enum MockData {
         CapabilityTypeOption(key: .BILL_PAYMENT, label: "Bill Payment"),
     ]
 
-    // İşlemler sekmesi (capability sorgusu) için sabit sonuç. stockLevel'ın hepsi bilerek nil:
-    // api-contract.md'de StoreCapabilityResult'ta bu alan yok, stok kavramı sadece Pasaj'a özgü.
-    static let storesWithDistance: [StoreWithDistance] = [
-        StoreWithDistance(store: stores[0], distance: 1.2, stockLevel: nil),
-        StoreWithDistance(store: stores[1], distance: 2.8, stockLevel: nil),
-        StoreWithDistance(store: stores[2], distance: 3.5, stockLevel: nil),
-        StoreWithDistance(store: stores[3], distance: 4.1, stockLevel: nil),
-        StoreWithDistance(store: stores[4], distance: 5.6, stockLevel: nil),
-        StoreWithDistance(store: stores[5], distance: 6.3, stockLevel: nil),
-    ].sorted { $0.distance < $1.distance }
+    static func storesWithDistance(lat: Double, lng: Double, radius: Double) -> [StoreWithDistance] {
+        let origin = CLLocation(latitude: lat, longitude: lng)
+        return stores.prefix(6).compactMap { store in
+            let distanceKm = origin.distance(from: CLLocation(latitude: store.latitude, longitude: store.longitude)) / 1000
+            guard distanceKm <= radius else { return nil }
+            return StoreWithDistance(store: store, distance: (distanceKm * 10).rounded() / 10, stockLevel: nil)
+        }
+        .sorted { $0.distance < $1.distance }
+    }
 
-    // Pasaj'ın ilk açılış görünümü: ürün/işlem bağımsız, sadece bayi konumlarını gösterir.
-    static let allStoresOverview: [StoreWithDistance] = stores.enumerated().map { index, store in
-        StoreWithDistance(store: store, distance: Double(index) * 0.7 + 0.5, stockLevel: nil)
-    }.sorted { $0.distance < $1.distance }
+    // Pasaj'ın ilk açılış görünümü: ürün/işlem bağımsız, sadece yakın çevredeki bayi
+    // konumlarını gösterir. Türkiye çapında dönersek harita ilk açılışta tüm ülkeyi
+    // kapsayacak şekilde zoom-out eder (bkz. StoreMapView.fitCameraToStores) — bu yüzden
+    // gerçek mesafeye göre hesaplayıp radius dışındakileri eliyoruz.
+    static func allStoresOverview(lat: Double, lng: Double, radius: Double) -> [StoreWithDistance] {
+        let origin = CLLocation(latitude: lat, longitude: lng)
+        return stores.compactMap { store in
+            let distanceKm = origin.distance(from: CLLocation(latitude: store.latitude, longitude: store.longitude)) / 1000
+            guard distanceKm <= radius else { return nil }
+            return StoreWithDistance(store: store, distance: (distanceKm * 10).rounded() / 10, stockLevel: nil)
+        }
+        .sorted { $0.distance < $1.distance }
+    }
 
-    // Pasaj sekmesi: her ürün için farklı bir bayi/stok görünümü üretir (deterministik,
-    // gerçek Haversine hesabı değil — sadece mock demo amaçlı).
-    static func storesWithDistance(forProductId productId: Int) -> [StoreWithDistance] {
+    // Pasaj sekmesi: her ürün için farklı bir bayi/stok görünümü üretir (hangi bayilerde ürün
+    // var, ne kadar stokta — deterministik/sahte), ama mesafe artık gerçek konumdan hesaplanıyor.
+    static func storesWithDistance(forProductId productId: Int, lat: Double, lng: Double, radius: Double) -> [StoreWithDistance] {
         let levels: [StockLevel] = [.IN_STOCK, .LOW, .OUT_OF_STOCK]
+        let origin = CLLocation(latitude: lat, longitude: lng)
         return stores.enumerated().compactMap { index, store in
             guard (productId + index) % 4 != 0 else { return nil }
+            let distanceKm = origin.distance(from: CLLocation(latitude: store.latitude, longitude: store.longitude)) / 1000
+            guard distanceKm <= radius else { return nil }
             let level = levels[(productId + index) % levels.count]
-            let distance = (Double((productId * 3 + index * 7) % 40) / 10) + 0.8
-            return StoreWithDistance(store: store, distance: (distance * 10).rounded() / 10, stockLevel: level)
+            return StoreWithDistance(store: store, distance: (distanceKm * 10).rounded() / 10, stockLevel: level)
         }
         .sorted { $0.distance < $1.distance }
     }

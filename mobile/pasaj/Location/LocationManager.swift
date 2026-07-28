@@ -26,6 +26,17 @@ final class LocationManager: NSObject, CLLocationManagerDelegate {
         manager.requestWhenInUseAuthorization()
     }
 
+    // İlk açılışta konum henüz gelmemişken haritanın yanlışlıkla İstanbul'da açılmasını
+    // önlemek için: gerçek konum gelene kadar kısa bir süre bekler. İzin verilmediyse ya da
+    // konum bu süre içinde gelmezse (ör. simülatörde konum kapalıysa) İstanbul'a düşer.
+    func resolvedLocation(timeout: TimeInterval = 2.0) async -> CLLocationCoordinate2D {
+        let deadline = Date().addingTimeInterval(timeout)
+        while userLocation == nil && Date() < deadline {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+        return userLocation ?? LocationManager.istanbulFallback
+    }
+
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
         if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
