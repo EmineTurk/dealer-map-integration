@@ -1,0 +1,130 @@
+{
+  "info": {
+    "_postman_id": "b14-gateway-store-capability",
+    "name": "Backend B - Day 14 Gateway Resilience",
+    "description": "Gateway üzerinden store-service ve capability-service: correlation ID, 404/400 ApiError sözleşmesi ve read route erişilebilirliği. Rate limiting stock write route'unda (Backend A); B read route'ları etkilenmez.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gatewayBaseUrl", "value": "http://localhost:8085" },
+    { "key": "lat", "value": "40.9901" },
+    { "key": "lng", "value": "29.0253" },
+    { "key": "radius", "value": "10" }
+  ],
+  "item": [
+    {
+      "name": "01 - Gateway Health",
+      "request": {
+        "method": "GET",
+        "url": "{{gatewayBaseUrl}}/actuator/health"
+      }
+    },
+    {
+      "name": "02 - Stores via Gateway",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "pm.test('correlation id present', () => {",
+              "  pm.expect(pm.response.headers.get('X-Correlation-Id')).to.be.ok;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{gatewayBaseUrl}}/api/stores"
+      }
+    },
+    {
+      "name": "03 - Store 404 ApiError via Gateway",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 404', () => pm.response.to.have.status(404));",
+              "const body = pm.response.json();",
+              "pm.test('ApiError shape', () => {",
+              "  pm.expect(body.status).to.eql(404);",
+              "  pm.expect(body.message).to.include('999');",
+              "  pm.expect(body.timestamp).to.be.a('string');",
+              "});",
+              "pm.test('correlation id on error', () => {",
+              "  pm.expect(pm.response.headers.get('X-Correlation-Id')).to.be.ok;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{gatewayBaseUrl}}/api/stores/999"
+      }
+    },
+    {
+      "name": "04 - Capability types via Gateway",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "pm.test('has NEW_LINE', () => {",
+              "  const keys = pm.response.json().map(t => t.key);",
+              "  pm.expect(keys).to.include('NEW_LINE');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{gatewayBaseUrl}}/api/comtr/capabilities/types"
+      }
+    },
+    {
+      "name": "05 - Capability 404 unknown type",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 404', () => pm.response.to.have.status(404));",
+              "const body = pm.response.json();",
+              "pm.test('ApiError', () => {",
+              "  pm.expect(body.status).to.eql(404);",
+              "  pm.expect(body.message).to.include('UNKNOWN');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{gatewayBaseUrl}}/api/comtr/capabilities/UNKNOWN/stores?lat={{lat}}&lng={{lng}}&radius={{radius}}"
+      }
+    },
+    {
+      "name": "06 - Capability geo search via Gateway",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "pm.test('array body', () => pm.expect(pm.response.json()).to.be.an('array'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{gatewayBaseUrl}}/api/comtr/capabilities/DEVICE_REPAIR/stores?lat={{lat}}&lng={{lng}}&radius={{radius}}"
+      }
+    }
+  ]
+}

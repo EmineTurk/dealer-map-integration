@@ -2,6 +2,7 @@ package com.turkcell.store_service.presentation.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -26,6 +27,22 @@ public class GlobalExceptionHandler {
 				.map(v -> v.getMessage())
 				.orElse("Geçersiz istek parametresi");
 		ApiError body = ApiError.of(HttpStatus.BAD_REQUEST.value(), message);
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+	}
+
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ApiError> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+		String message = ex.getBindingResult().getFieldErrors().stream()
+				.findFirst()
+				.map(err -> err.getDefaultMessage() == null ? "Geçersiz istek gövdesi" : err.getDefaultMessage())
+				.orElse("Geçersiz istek gövdesi");
+		ApiError body = ApiError.of(HttpStatus.BAD_REQUEST.value(), message);
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+	}
+
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex) {
+		ApiError body = ApiError.of(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
 	}
 

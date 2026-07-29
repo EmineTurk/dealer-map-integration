@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.turkcell.capability_service.application.dto.CapabilityTypeOption;
 import com.turkcell.capability_service.application.dto.StoreCapabilityResult;
@@ -19,21 +19,23 @@ import com.turkcell.capability_service.domain.service.DistanceCalculator;
 import com.turkcell.capability_service.domain.service.GoogleMapsDeepLink;
 import com.turkcell.capability_service.infrastructure.client.StoreDto;
 import com.turkcell.capability_service.infrastructure.client.StoreServiceClient;
-import com.turkcell.capability_service.infrastructure.persistence.StoreCapabilityRepository;
 
+/**
+ * Orchestrates capability queries: DB lookup (transactional) then HTTP to store-service
+ * outside any transaction so the connection pool is not held during remote calls.
+ */
 @Service
-@Transactional(readOnly = true)
 public class CapabilityApplicationService {
 
-	private final StoreCapabilityRepository capabilityRepository;
+	private final CapabilityPersistenceService persistenceService;
 	private final StoreServiceClient storeServiceClient;
 	private final DistanceCalculator distanceCalculator;
 
 	public CapabilityApplicationService(
-			StoreCapabilityRepository capabilityRepository,
+			CapabilityPersistenceService persistenceService,
 			StoreServiceClient storeServiceClient,
 			DistanceCalculator distanceCalculator) {
-		this.capabilityRepository = capabilityRepository;
+		this.persistenceService = persistenceService;
 		this.storeServiceClient = storeServiceClient;
 		this.distanceCalculator = distanceCalculator;
 	}
@@ -58,16 +60,15 @@ public class CapabilityApplicationService {
 			double radius,
 			String workingHours,
 			String status) {
-		CapabilityType type = CapabilityType.fromKey(typeKey);
-		if (type == null) {
-			throw new CapabilityTypeNotFoundException(typeKey);
-		}
+		CapabilityType type = requireType(typeKey);
 
-		List<Long> storeIds = capabilityRepository.findStoreIdsByCapabilityType(type);
+		// 1) DB — short transactional scope (no HTTP inside)
+		List<Long> storeIds = persistenceService.findStoreIdsByCapabilityType(type);
 		if (storeIds.isEmpty()) {
 			return List.of();
 		}
 
+		// 2) HTTP — outside @Transactional so pool connections are released
 		List<StoreDto> stores = storeServiceClient.getStoresByIds(storeIds);
 
 		boolean weekendOnly = workingHours != null
@@ -87,6 +88,26 @@ public class CapabilityApplicationService {
 				.filter(result -> result.distance() <= radius)
 				.sorted(Comparator.comparingDouble(StoreCapabilityResult::distance))
 				.collect(Collectors.toCollection(ArrayList::new));
+	}
+
+	@CacheEvict(cacheNames = {"capability-types", "capability-store-search"}, allEntries = true)
+	public void assignCapability(String typeKey, Long storeId) {
+		CapabilityType type = requireType(typeKey);
+		persistenceService.assignCapability(storeId, type);
+	}
+
+	@CacheEvict(cacheNames = {"capability-types", "capability-store-search"}, allEntries = true)
+	public void removeCapability(String typeKey, Long storeId) {
+		CapabilityType type = requireType(typeKey);
+		persistenceService.removeCapability(storeId, type);
+	}
+
+	private static CapabilityType requireType(String typeKey) {
+		CapabilityType type = CapabilityType.fromKey(typeKey);
+		if (type == null) {
+			throw new CapabilityTypeNotFoundException(typeKey);
+		}
+		return type;
 	}
 
 	private static boolean matchesStatus(StoreDto store, String statusFilter) {

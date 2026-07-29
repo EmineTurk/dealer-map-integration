@@ -46,6 +46,18 @@
         "method": "GET",
         "url": "{{baseUrl}}/stores/999"
       }
+    },
+    {
+      "name": "Update Store Status",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\":\"ACTIVE\"}"
+        },
+        "url": "{{baseUrl}}/stores/1/status"
+      }
     }
   ],
   "variable": [

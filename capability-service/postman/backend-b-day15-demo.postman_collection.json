@@ -1,0 +1,106 @@
+{
+  "info": {
+    "_postman_id": "b15-gateway-cache-demo",
+    "name": "Backend B - Day 15 Demo Gateway Cache",
+    "description": "Demo #3: Gateway üzerinden com.tr capability geo araması — cold vs warm süre farkı (Redis TTL 1h). Collection Runner ile numaralı sırada çalıştırın.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gatewayBaseUrl", "value": "http://localhost:8085" },
+    { "key": "lat", "value": "40.9901" },
+    { "key": "lng", "value": "29.0253" },
+    { "key": "radius", "value": "15" },
+    { "key": "coldResponseTimeMs", "value": "0" },
+    { "key": "warmResponseTimeMs", "value": "0" }
+  ],
+  "item": [
+    {
+      "name": "01 - Gateway Health",
+      "request": {
+        "method": "GET",
+        "url": "{{gatewayBaseUrl}}/actuator/health"
+      }
+    },
+    {
+      "name": "02 - Stores list (gateway)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('stores 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{gatewayBaseUrl}}/api/stores?city=Istanbul"
+      }
+    },
+    {
+      "name": "03 - Capability cold request",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.collectionVariables.set('demoRadius', (15 + (Date.now() % 100000) / 10000000).toFixed(7));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('cold 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('coldResponseTimeMs', String(pm.response.responseTime));",
+              "console.log('cold ms=', pm.response.responseTime);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{gatewayBaseUrl}}/api/comtr/capabilities/DEVICE_REPAIR/stores?lat={{lat}}&lng={{lng}}&radius={{demoRadius}}"
+      }
+    },
+    {
+      "name": "04 - Capability warm request (same URL)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('warm 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('warmResponseTimeMs', String(pm.response.responseTime));",
+              "const cold = Number(pm.collectionVariables.get('coldResponseTimeMs'));",
+              "const warm = pm.response.responseTime;",
+              "console.log('warm ms=', warm, 'cold ms=', cold);",
+              "pm.test('warm not slower than cold by huge margin (cache path)', () => {",
+              "  pm.expect(warm).to.be.below(cold + 5000);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{gatewayBaseUrl}}/api/comtr/capabilities/DEVICE_REPAIR/stores?lat={{lat}}&lng={{lng}}&radius={{demoRadius}}"
+      }
+    },
+    {
+      "name": "05 - Status update + cache evict (direct store-service optional)",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\":\"ACTIVE\"}"
+        },
+        "url": "http://localhost:8081/stores/1/status",
+        "description": "CUD + @CacheEvict kanıtı için store-service doğrudan. Gateway CORS PUT destekler; path /api/stores/1/status."
+      }
+    }
+  ]
+}

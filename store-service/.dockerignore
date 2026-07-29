@@ -1,0 +1,10 @@
+target/
+.git/
+.idea/
+.vscode/
+*.iml
+*.log
+README.md
+HELP.md
+postman/
+sql/

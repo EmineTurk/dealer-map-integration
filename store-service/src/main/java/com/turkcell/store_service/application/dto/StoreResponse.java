@@ -1,13 +1,12 @@
 package com.turkcell.store_service.application.dto;
 
 import com.turkcell.store_service.domain.model.Store;
-import com.turkcell.store_service.domain.model.StoreStatus;
-import com.turkcell.store_service.domain.model.StoreType;
 import com.turkcell.store_service.domain.service.GoogleMapsDeepLink;
 
 /**
  * Matches API contract {@code Store} type, plus Day-7 filter fields
  * ({@code status}, {@code opensWeekend}) and Day-12 {@code directionsUrl}.
+ * Domain enums are mapped to String so the DTO does not depend on domain types.
  */
 public record StoreResponse(
 		Long id,
@@ -17,10 +16,10 @@ public record StoreResponse(
 		String district,
 		double latitude,
 		double longitude,
-		StoreType type,
+		String type,
 		String phone,
 		String workingHours,
-		StoreStatus status,
+		String status,
 		boolean opensWeekend,
 		String directionsUrl
 ) {
@@ -33,10 +32,10 @@ public record StoreResponse(
 				store.getDistrict(),
 				store.getLatitude(),
 				store.getLongitude(),
-				store.getType(),
+				store.getType() == null ? null : store.getType().name(),
 				store.getPhone(),
 				store.getWorkingHours(),
-				store.getStatus(),
+				store.getStatus() == null ? null : store.getStatus().name(),
 				store.isOpensWeekend(),
 				GoogleMapsDeepLink.forCoordinates(store.getLatitude(), store.getLongitude()));
 	}
