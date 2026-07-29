@@ -113,6 +113,18 @@
   color: var(--turkcell-yellow);
 }
 
+/* API unavailable while mock fallback is disabled (Red) */
+.navbar-status.status-unavailable {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+.navbar-status.status-unavailable .status-dot {
+  background-color: #ef4444;
+}
+.navbar-status.status-unavailable .status-label {
+  color: #ef4444;
+}
+
 @keyframes statusPulseGreen {
   0% {
     transform: scale(0.95);

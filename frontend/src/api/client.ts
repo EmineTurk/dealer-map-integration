@@ -10,6 +10,8 @@ import type {
 } from '../types/api';
 
 const VITE_API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || '';
+const VITE_ENABLE_MOCK_FALLBACK =
+  String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK).toLowerCase() === 'true';
 
 // If Gateway URL is provided, route through Gateway prefixes, else fallback to direct microservice ports
 const VITE_STOCK_SERVICE_URL = VITE_API_GATEWAY_URL 
@@ -42,11 +44,13 @@ export const capabilityApi = axios.create({
 // API Connection & CORS Status Tracker
 export const apiStatus = {
   isUsingFallback: false,
+  isUnavailable: false,
   lastErrorMessage: '',
 };
 
 const handleApiError = (serviceName: string, baseURL: string, error: any) => {
-  apiStatus.isUsingFallback = true;
+  apiStatus.isUsingFallback = VITE_ENABLE_MOCK_FALLBACK;
+  apiStatus.isUnavailable = !VITE_ENABLE_MOCK_FALLBACK;
   let message = 'Backend sunucusuna bağlanılamadı.';
   
   if (error.code === 'ERR_NETWORK') {
@@ -59,10 +63,21 @@ const handleApiError = (serviceName: string, baseURL: string, error: any) => {
   console.warn(`[CORS / API Katmanı Uyarısı] ${serviceName} ->`, message, error);
 };
 
+const requireMockFallback = (error: unknown) => {
+  if (!VITE_ENABLE_MOCK_FALLBACK) {
+    throw error;
+  }
+};
+
 // Interceptor setup for diagnostic logging
 [stockApi, storeApi, capabilityApi].forEach(api => {
   api.interceptors.response.use(
-    response => response,
+    response => {
+      apiStatus.isUsingFallback = false;
+      apiStatus.isUnavailable = false;
+      apiStatus.lastErrorMessage = '';
+      return response;
+    },
     error => {
       if (error.code === 'ERR_NETWORK' || !error.response) {
         console.info('[CORS Diagnostic] Cross-Origin or Network Error detected on request:', error.config?.url);
@@ -97,6 +112,7 @@ export const apiService = {
       return response.data;
     } catch (error) {
       handleApiError('stock-service', VITE_STOCK_SERVICE_URL, error);
+      requireMockFallback(error);
       return mockProducts;
     }
   },
@@ -117,6 +133,7 @@ export const apiService = {
       return response.data;
     } catch (error) {
       handleApiError('stock-service', VITE_STOCK_SERVICE_URL, error);
+      requireMockFallback(error);
       // Mock local filtering logic:
       return mockStores.map(store => {
         const qty = mockStocks[`${productId}-${store.id}`] ?? 0;
@@ -146,6 +163,7 @@ export const apiService = {
       return response.data;
     } catch (error) {
       handleApiError('capability-service', VITE_CAPABILITY_SERVICE_URL, error);
+      requireMockFallback(error);
       return [
         { key: 'NEW_LINE', label: 'Yeni Hat Aktivasyonu' },
         { key: 'DEVICE_DELIVERY', label: 'Cihaz Teslimatı' },
@@ -173,6 +191,7 @@ export const apiService = {
       return response.data;
     } catch (error) {
       handleApiError('capability-service', VITE_CAPABILITY_SERVICE_URL, error);
+      requireMockFallback(error);
       
       // Mock filtering logic on fallback
       return mockStores.map(store => {

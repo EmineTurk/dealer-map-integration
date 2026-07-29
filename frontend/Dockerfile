@@ -12,7 +12,9 @@ COPY . .
 
 # Browser requests use Nginx's same-origin gateway proxy in Docker Compose.
 ARG VITE_API_GATEWAY_URL=/gateway
+ARG VITE_ENABLE_MOCK_FALLBACK=false
 ENV VITE_API_GATEWAY_URL=${VITE_API_GATEWAY_URL}
+ENV VITE_ENABLE_MOCK_FALLBACK=${VITE_ENABLE_MOCK_FALLBACK}
 
 # Build the production bundle
 RUN npm run build

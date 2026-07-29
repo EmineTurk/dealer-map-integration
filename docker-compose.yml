@@ -180,6 +180,7 @@ services:
       context: ./frontend
       args:
         VITE_API_GATEWAY_URL: /gateway
+        VITE_ENABLE_MOCK_FALLBACK: ${VITE_ENABLE_MOCK_FALLBACK:-false}
     container_name: dealer-map-frontend
     ports:
       - "8080:80"

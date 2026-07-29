@@ -185,10 +185,66 @@ const baseMockStores: Store[] = [
   }
 ];
 
+// Bearing from each coastal district center towards land
+// (0=N, 90=E, 180=S, 270=W).
+const COASTAL_INLAND_BEARINGS: Record<string, number> = {
+  Adalar: 180,
+  Avcilar: 0,
+  Bakirkoy: 0,
+  Besiktas: 270,
+  Beykoz: 90,
+  Beylikduzu: 0,
+  Beyoglu: 270,
+  Buyukcekmece: 0,
+  Kadikoy: 30,
+  Kartal: 0,
+  Kucukcekmece: 90,
+  Maltepe: 0,
+  Pendik: 0,
+  Sariyer: 270,
+  Sile: 180,
+  Silivri: 0,
+  Tuzla: 315,
+  Uskudar: 90,
+  Zeytinburnu: 0
+};
+
+const distributedCoordinates = (
+  district: (typeof ISTANBUL_DISTRICTS)[number],
+  districtIndex: number,
+  branchNumber: number
+) => {
+  const kilometersPerLatitudeDegree = 111.32;
+  const inlandBearing = COASTAL_INLAND_BEARINGS[district.key];
+  const isCoastal = inlandBearing !== undefined;
+  const distanceKm = isCoastal ? 0.15 + ((branchNumber - 1) * 0.30) : 0.35;
+  const districtRotationDegrees = (districtIndex * 137.508) % 360;
+  const branchAngleDegrees = isCoastal
+    ? inlandBearing
+    : districtRotationDegrees + ((branchNumber - 1) * 120);
+  const branchAngleRadians = branchAngleDegrees * Math.PI / 180;
+  const latitudeOffset = (
+    distanceKm / kilometersPerLatitudeDegree
+  ) * Math.cos(branchAngleRadians);
+  const longitudeDegreeKm = (
+    kilometersPerLatitudeDegree * Math.cos(district.lat * Math.PI / 180)
+  );
+  const longitudeOffset = (
+    distanceKm / longitudeDegreeKm
+  ) * Math.sin(branchAngleRadians);
+
+  return {
+    latitude: district.lat + latitudeOffset,
+    longitude: district.lng + longitudeOffset
+  };
+};
+
 const generatedMockStores: Store[] = Array.from({ length: 100 }, (_, index) => {
   const id = index + 1;
-  const district = ISTANBUL_DISTRICTS[index % ISTANBUL_DISTRICTS.length];
+  const districtIndex = index % ISTANBUL_DISTRICTS.length;
+  const district = ISTANBUL_DISTRICTS[districtIndex];
   const branchNumber = Math.floor(index / ISTANBUL_DISTRICTS.length) + 1;
+  const coordinates = distributedCoordinates(district, districtIndex, branchNumber);
   const type = baseMockStores.find(store => store.id === id)?.type
     ?? (id % 3 === 0 ? 'TIM' : 'FRANCHISE');
   const hours = ['09:00 - 21:00', '09:00 - 20:00', '10:00 - 22:00', '10:00 - 20:00'];
@@ -199,10 +255,8 @@ const generatedMockStores: Store[] = Array.from({ length: 100 }, (_, index) => {
     address: `${district.label} Merkez Cd. No: ${id}, ${district.label}`,
     city: 'Istanbul',
     district: district.key,
-    // Keep generated dealers close to the verified district center so coastal
-    // districts do not drift into the sea while pins remain distinguishable.
-    latitude: district.lat + (((id * 37) % 13) - 6) * 0.00004,
-    longitude: district.lng + (((id * 53) % 17) - 8) * 0.00005,
+    latitude: coordinates.latitude,
+    longitude: coordinates.longitude,
     type,
     phone: `+90 212 555 ${String(100 + id).padStart(4, '0')}`,
     workingHours: hours[id % hours.length]

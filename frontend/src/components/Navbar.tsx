@@ -3,20 +3,33 @@ import { NavLink } from 'react-router-dom';
 import { apiStatus } from '../api/client';
 import './Navbar.css';
 
-export const Navbar: React.FC = () => {
-  const [isFallback, setIsFallback] = useState(apiStatus.isUsingFallback);
+type ApiMode = 'real' | 'fallback' | 'unavailable';
 
-  // Poll status periodically to react to fallback state changes reactively
+const getApiMode = (): ApiMode => {
+  if (apiStatus.isUnavailable) return 'unavailable';
+  if (apiStatus.isUsingFallback) return 'fallback';
+  return 'real';
+};
+
+export const Navbar: React.FC = () => {
+  const [apiMode, setApiMode] = useState<ApiMode>(getApiMode);
+
+  // Poll the shared API status object so the badge follows request outcomes.
   useEffect(() => {
     const interval = setInterval(() => {
-      if (apiStatus.isUsingFallback !== isFallback) {
-        setIsFallback(apiStatus.isUsingFallback);
-      }
+      setApiMode(currentMode => {
+        const nextMode = getApiMode();
+        return currentMode === nextMode ? currentMode : nextMode;
+      });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isFallback]);
+  }, []);
 
-  const statusClass = isFallback ? 'status-fallback' : 'status-real';
+  const statusLabels: Record<ApiMode, string> = {
+    real: 'Gerçek API Aktif',
+    fallback: 'Simüle API Aktif',
+    unavailable: 'API Bağlantısı Yok'
+  };
 
   return (
     <header className="navbar-header glass-panel">
@@ -48,11 +61,12 @@ export const Navbar: React.FC = () => {
           </NavLink>
         </nav>
 
-        <div className={`navbar-status ${statusClass}`}>
+        <div
+          className={`navbar-status status-${apiMode}`}
+          title={apiStatus.lastErrorMessage || statusLabels[apiMode]}
+        >
           <span className="status-dot"></span>
-          <span className="status-label">
-            {isFallback ? 'Simüle API Aktif' : 'Gerçek API Aktif'}
-          </span>
+          <span className="status-label">{statusLabels[apiMode]}</span>
         </div>
       </div>
     </header>

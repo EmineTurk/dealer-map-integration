@@ -2,6 +2,7 @@ package com.turkcell.store_service.infrastructure.persistence;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,32 @@ import com.turkcell.store_service.domain.model.StoreType;
 public class StoreDataLoader implements ApplicationRunner {
 
 	private static final Logger log = LoggerFactory.getLogger(StoreDataLoader.class);
+	private static final double KILOMETERS_PER_LATITUDE_DEGREE = 111.32;
+	/**
+	 * Bearing from the district center towards land (0=N, 90=E, 180=S, 270=W).
+	 * Coastal dealers are placed along these directions instead of around a ring,
+	 * preventing one side of the distribution from falling into the sea.
+	 */
+	private static final Map<String, Double> COASTAL_INLAND_BEARINGS = Map.ofEntries(
+			Map.entry("Adalar", 180.0),
+			Map.entry("Avcilar", 0.0),
+			Map.entry("Bakirkoy", 0.0),
+			Map.entry("Besiktas", 270.0),
+			Map.entry("Beykoz", 90.0),
+			Map.entry("Beylikduzu", 0.0),
+			Map.entry("Beyoglu", 270.0),
+			Map.entry("Buyukcekmece", 0.0),
+			Map.entry("Kadikoy", 30.0),
+			Map.entry("Kartal", 0.0),
+			Map.entry("Kucukcekmece", 90.0),
+			Map.entry("Maltepe", 0.0),
+			Map.entry("Pendik", 0.0),
+			Map.entry("Sariyer", 270.0),
+			Map.entry("Sile", 180.0),
+			Map.entry("Silivri", 0.0),
+			Map.entry("Tuzla", 315.0),
+			Map.entry("Uskudar", 90.0),
+			Map.entry("Zeytinburnu", 0.0));
 
 	private final StoreJpaRepository storeRepository;
 
@@ -73,10 +100,12 @@ public class StoreDataLoader implements ApplicationRunner {
 			int branchNumber = (int) ((id - 1) / districts.length) + 1;
 			String district = districts[districtIndex];
 			StoreType type = id % 3 == 0 ? StoreType.TIM : StoreType.FRANCHISE;
-			// Keep generated dealers close to the verified district center so coastal
-			// districts do not drift into the sea while pins remain distinguishable.
-			double latitudeOffset = (((id * 37) % 13) - 6) * 0.00004;
-			double longitudeOffset = (((id * 53) % 17) - 8) * 0.00005;
+			double[] coordinates = distributedCoordinates(
+					district,
+					districtIndex,
+					branchNumber,
+					districtCenters[districtIndex][0],
+					districtCenters[districtIndex][1]);
 
 			stores.add(store(
 					id,
@@ -84,8 +113,8 @@ public class StoreDataLoader implements ApplicationRunner {
 					district + " Merkez Cd. No: " + id + ", " + district,
 					"Istanbul",
 					district,
-					districtCenters[districtIndex][0] + latitudeOffset,
-					districtCenters[districtIndex][1] + longitudeOffset,
+					coordinates[0],
+					coordinates[1],
 					type,
 					String.format("+90 212 555 %04d", 100 + id),
 					workingHours[(int) (id % workingHours.length)],
@@ -95,6 +124,43 @@ public class StoreDataLoader implements ApplicationRunner {
 		}
 
 		return List.copyOf(stores);
+	}
+
+	/**
+	 * Distributes branches deterministically so dealer pins do not move after
+	 * restarts. Coastal districts extend only towards land; other districts use
+	 * a ring around their verified center.
+	 */
+	private static double[] distributedCoordinates(
+			String district,
+			int districtIndex,
+			int branchNumber,
+			double centerLatitude,
+			double centerLongitude) {
+		Double inlandBearing = COASTAL_INLAND_BEARINGS.get(district);
+		double distanceKm;
+		double branchAngleRadians;
+		if (inlandBearing != null) {
+			distanceKm = 0.15 + ((branchNumber - 1) * 0.30);
+			branchAngleRadians = Math.toRadians(inlandBearing);
+		} else {
+			distanceKm = 0.35;
+			double districtRotationDegrees = (districtIndex * 137.508) % 360;
+			branchAngleRadians = Math.toRadians(
+					districtRotationDegrees + ((branchNumber - 1) * 120));
+		}
+
+		double latitudeOffset =
+				(distanceKm / KILOMETERS_PER_LATITUDE_DEGREE) * Math.cos(branchAngleRadians);
+		double longitudeDegreeKm =
+				KILOMETERS_PER_LATITUDE_DEGREE * Math.cos(Math.toRadians(centerLatitude));
+		double longitudeOffset =
+				(distanceKm / longitudeDegreeKm) * Math.sin(branchAngleRadians);
+
+		return new double[] {
+				centerLatitude + latitudeOffset,
+				centerLongitude + longitudeOffset
+		};
 	}
 
 	private static StoreEntity store(
