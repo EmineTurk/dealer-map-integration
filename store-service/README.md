@@ -33,7 +33,8 @@ mvnw.cmd spring-boot:run
 
 Bağlantı: `store_app` / `StoreApp123` @ `FREEPDB1` (port 1521)
 
-İlk açılışta `StoreDataLoader` tablo boşsa 15 İstanbul bayisini seed eder.
+`StoreDataLoader`, uygulama açılışında İstanbul'un 39 ilçesine dağılmış 100 aktif bayiyi
+idempotent biçimde senkronize eder. Her ilçede 2-3 bayi bulunur.
 
 Yerel varsayılanlar tek `turkcell-oracle` container'ına bağlanır:
 

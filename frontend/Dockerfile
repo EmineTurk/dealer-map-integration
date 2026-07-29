@@ -10,6 +10,10 @@ RUN npm ci
 # Copy the rest of the application files
 COPY . .
 
+# Browser requests use Nginx's same-origin gateway proxy in Docker Compose.
+ARG VITE_API_GATEWAY_URL=/gateway
+ENV VITE_API_GATEWAY_URL=${VITE_API_GATEWAY_URL}
+
 # Build the production bundle
 RUN npm run build
 

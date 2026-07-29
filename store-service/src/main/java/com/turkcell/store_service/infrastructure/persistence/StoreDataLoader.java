@@ -1,5 +1,8 @@
 package com.turkcell.store_service.infrastructure.persistence;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -27,47 +30,71 @@ public class StoreDataLoader implements ApplicationRunner {
 	@Override
 	@Transactional
 	public void run(ApplicationArguments args) {
-		if (storeRepository.count() > 0) {
-			log.info("STORE already has {} rows — skip seed", storeRepository.count());
-			return;
-		}
-		log.info("Seeding STORE with 15 Istanbul dealers...");
-		storeRepository.saveAll(seedStores());
-		log.info("STORE seed completed");
+		long currentCount = storeRepository.count();
+		List<StoreEntity> desiredStores = seedStores();
+		log.info("Synchronizing STORE seed: current={}, desired={}", currentCount, desiredStores.size());
+		storeRepository.saveAll(desiredStores);
+		log.info("STORE seed synchronized with {} ACTIVE Istanbul dealers", storeRepository.count());
 	}
 
-	private static java.util.List<StoreEntity> seedStores() {
-		return java.util.List.of(
-				store(1L, "Turkcell Kadikoy TIM", "Sogutlucesme Cd. No: 42, Kadikoy", "Istanbul", "Kadikoy",
-						40.9901, 29.0253, StoreType.TIM, "+90 216 555 0101", "09:00 - 21:00", StoreStatus.ACTIVE, true),
-				store(2L, "Turkcell Besiktas TIM", "Barbaros Blv. No: 12, Besiktas", "Istanbul", "Besiktas",
-						41.0428, 29.0075, StoreType.TIM, "+90 212 555 0102", "09:00 - 21:00", StoreStatus.ACTIVE, true),
-				store(3L, "Turkcell Sisli TIM", "Halaskargazi Cd. No: 150, Sisli", "Istanbul", "Sisli",
-						41.0602, 28.9877, StoreType.TIM, "+90 212 555 0103", "09:00 - 22:00", StoreStatus.ACTIVE, true),
-				store(4L, "Turkcell Uskudar TIM", "Hakimiyeti Milliye Cd. No: 80, Uskudar", "Istanbul", "Uskudar",
-						41.0267, 29.0152, StoreType.TIM, "+90 216 555 0104", "09:00 - 20:00", StoreStatus.ACTIVE, false),
-				store(5L, "Turkcell Fatih TIM", "Fevzipasa Cd. No: 210, Fatih", "Istanbul", "Fatih",
-						41.0186, 28.9497, StoreType.TIM, "+90 212 555 0105", "09:00 - 20:00", StoreStatus.ACTIVE, true),
-				store(6L, "Turkcell Beyoglu TIM", "Istiklal Cd. No: 75, Beyoglu", "Istanbul", "Beyoglu",
-						41.0370, 28.9764, StoreType.TIM, "+90 212 555 0106", "10:00 - 22:00", StoreStatus.ACTIVE, true),
-				store(7L, "Turkcell Kadikoy Franchise 1", "Moda Cd. No: 18, Kadikoy", "Istanbul", "Kadikoy",
-						40.9880, 29.0300, StoreType.FRANCHISE, "+90 216 555 0107", "09:00 - 20:00", StoreStatus.ACTIVE, false),
-				store(8L, "Turkcell Besiktas Franchise 1", "Sinanpasa Pasaji No: 5, Besiktas", "Istanbul", "Besiktas",
-						41.0410, 29.0090, StoreType.FRANCHISE, "+90 212 555 0108", "09:00 - 20:00", StoreStatus.ACTIVE, true),
-				store(9L, "Turkcell Sisli Franchise 1", "Abdi Ipekci Cd. No: 45, Nisantasi", "Istanbul", "Sisli",
-						41.0580, 28.9850, StoreType.FRANCHISE, "+90 212 555 0109", "10:00 - 20:00", StoreStatus.ACTIVE, false),
-				store(10L, "Turkcell Uskudar Franchise 1", "Baglarbasi Cd. No: 120, Uskudar", "Istanbul", "Uskudar",
-						41.0250, 29.0120, StoreType.FRANCHISE, "+90 216 555 0110", "09:00 - 20:00", StoreStatus.ACTIVE, true),
-				store(11L, "Turkcell Fatih Franchise 1", "Vatan Cd. No: 33, Fatih", "Istanbul", "Fatih",
-						41.0150, 28.9450, StoreType.FRANCHISE, "+90 212 555 0111", "09:00 - 19:00", StoreStatus.INACTIVE, false),
-				store(12L, "Turkcell Kadikoy Franchise 2", "Acibadem Cd. No: 88, Kadikoy", "Istanbul", "Kadikoy",
-						40.9850, 29.0200, StoreType.FRANCHISE, "+90 216 555 0112", "09:00 - 20:00", StoreStatus.ACTIVE, true),
-				store(13L, "Turkcell Besiktas Franchise 2", "Ortakoy Meydan No: 3, Besiktas", "Istanbul", "Besiktas",
-						41.0450, 29.0020, StoreType.FRANCHISE, "+90 212 555 0113", "10:00 - 21:00", StoreStatus.ACTIVE, true),
-				store(14L, "Turkcell Sisli Franchise 2", "Mecidiyekoy Yolu No: 12, Sisli", "Istanbul", "Sisli",
-						41.0620, 28.9920, StoreType.FRANCHISE, "+90 212 555 0114", "09:00 - 20:00", StoreStatus.ACTIVE, false),
-				store(15L, "Turkcell Uskudar Franchise 2", "Libadiye Cd. No: 200, Uskudar", "Istanbul", "Uskudar",
-						41.0290, 29.0200, StoreType.FRANCHISE, "+90 216 555 0115", "09:00 - 20:00", StoreStatus.ACTIVE, true));
+	static List<StoreEntity> seedStores() {
+		String[] districts = {
+				"Adalar", "Arnavutkoy", "Atasehir", "Avcilar", "Bagcilar",
+				"Bahcelievler", "Bakirkoy", "Basaksehir", "Bayrampasa", "Besiktas",
+				"Beykoz", "Beylikduzu", "Beyoglu", "Buyukcekmece", "Catalca",
+				"Cekmekoy", "Esenler", "Esenyurt", "Eyupsultan", "Fatih",
+				"Gaziosmanpasa", "Gungoren", "Kadikoy", "Kagithane", "Kartal",
+				"Kucukcekmece", "Maltepe", "Pendik", "Sancaktepe", "Sariyer",
+				"Sile", "Silivri", "Sisli", "Sultanbeyli", "Sultangazi",
+				"Tuzla", "Umraniye", "Uskudar", "Zeytinburnu"
+		};
+		double[][] districtCenters = {
+				{40.8747, 29.1294}, {41.1856, 28.7407}, {40.9833, 29.1278},
+				{40.9799, 28.7211}, {41.0390, 28.8567}, {40.9979, 28.8506},
+				{40.9804, 28.8724}, {41.1076, 28.8062}, {41.0482, 28.9003},
+				{41.0422, 29.0083}, {41.1342, 29.0920}, {41.0030, 28.6410},
+				{41.0369, 28.9773}, {41.0201, 28.5850}, {41.1437, 28.4618},
+				{41.0324, 29.1755}, {41.0436, 28.8760}, {41.0343, 28.6801},
+				{41.0478, 28.9337}, {41.0193, 28.9479}, {41.0759, 28.9120},
+				{41.0229, 28.8723}, {40.9910, 29.0288}, {41.0810, 28.9730},
+				{40.8897, 29.1856}, {41.0002, 28.7809}, {40.9351, 29.1307},
+				{40.8775, 29.2333}, {41.0024, 29.2319}, {41.1667, 29.0573},
+				{41.1754, 29.6120}, {41.0732, 28.2464}, {41.0602, 28.9877},
+				{40.9684, 29.2618}, {41.1065, 28.8683}, {40.8168, 29.3003},
+				{41.0161, 29.1248}, {41.0267, 29.0152}, {40.9905, 28.8961}
+		};
+		String[] workingHours = {
+				"09:00 - 21:00", "09:00 - 20:00", "10:00 - 22:00", "10:00 - 20:00"
+		};
+		List<StoreEntity> stores = new ArrayList<>(100);
+
+		for (long id = 1; id <= 100; id++) {
+			int districtIndex = (int) ((id - 1) % districts.length);
+			int branchNumber = (int) ((id - 1) / districts.length) + 1;
+			String district = districts[districtIndex];
+			StoreType type = id % 3 == 0 ? StoreType.TIM : StoreType.FRANCHISE;
+			// Keep generated dealers close to the verified district center so coastal
+			// districts do not drift into the sea while pins remain distinguishable.
+			double latitudeOffset = (((id * 37) % 13) - 6) * 0.00004;
+			double longitudeOffset = (((id * 53) % 17) - 8) * 0.00005;
+
+			stores.add(store(
+					id,
+					"Turkcell " + district + " " + (type == StoreType.TIM ? "TIM " : "Franchise ") + branchNumber,
+					district + " Merkez Cd. No: " + id + ", " + district,
+					"Istanbul",
+					district,
+					districtCenters[districtIndex][0] + latitudeOffset,
+					districtCenters[districtIndex][1] + longitudeOffset,
+					type,
+					String.format("+90 212 555 %04d", 100 + id),
+					workingHours[(int) (id % workingHours.length)],
+					StoreStatus.ACTIVE,
+					id % 4 != 0
+			));
+		}
+
+		return List.copyOf(stores);
 	}
 
 	private static StoreEntity store(
