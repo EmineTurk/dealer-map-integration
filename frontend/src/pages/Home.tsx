@@ -49,11 +49,11 @@ export const Home: React.FC = () => {
         <h3 className="section-heading">Sistem Ana Veri Özeti</h3>
         <div className="metrics-grid">
           <div className="metric-box glass-panel">
-            <span className="metric-value">15</span>
+            <span className="metric-value">100</span>
             <span className="metric-label">Aktif TİM ve Franchise Mağazalar</span>
           </div>
           <div className="metric-box glass-panel">
-            <span className="metric-value">10</span>
+            <span className="metric-value">20</span>
             <span className="metric-label">Katalogtaki Toplam Ürün</span>
           </div>
           <div className="metric-box glass-panel">

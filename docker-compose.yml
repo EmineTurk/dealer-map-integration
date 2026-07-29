@@ -1,3 +1,13 @@
+# Oracle Free (gvenzl/oracle-free)
+# First startup can take several minutes while Oracle initializes.
+#
+# Main host endpoints:
+#   Frontend:     http://localhost:8080
+#   API Gateway:  http://localhost:8085
+#   Stock API:    http://localhost:8083
+#   Store API:    http://localhost:8081
+#   Capability:   http://localhost:8082
+
 services:
   oracle:
     image: gvenzl/oracle-free:23-slim
@@ -13,8 +23,10 @@ services:
       - ./store-service/sql/01_create_store_table.sql:/container-entrypoint-initdb.d/10_create_store_table.sql:ro
       - ./store-service/sql/02_alter_store_day7_columns.sql:/container-entrypoint-initdb.d/11_alter_store_day7_columns.sql:ro
       - ./store-service/sql/03_create_store_capability.sql:/container-entrypoint-initdb.d/12_create_store_capability.sql:ro
+      - ./store-service/sql/04_seed_100_store_capabilities.sql:/container-entrypoint-initdb.d/13_seed_store_capabilities.sql:ro
       - ./stock-service/sql/schema.sql:/container-entrypoint-initdb.d/20_create_stock_schema.sql:ro
       - ./stock-service/sql/data.sql:/container-entrypoint-initdb.d/21_seed_stock_data.sql:ro
+      - ./stock-service/sql/02_refresh_stock_distribution.sql:/container-entrypoint-initdb.d/22_seed_stock_distribution.sql:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
       interval: 30s
@@ -37,81 +49,118 @@ services:
       retries: 20
 
   store-service:
-    build: ./store-service
+    build:
+      context: ./store-service
     container_name: store-service
     ports:
       - "8081:8081"
     environment:
-      - STORE_DB_URL=jdbc:oracle:thin:@oracle:1521/FREEPDB1
-      - REDIS_HOST=redis
+      STORE_DB_URL: jdbc:oracle:thin:@//oracle:1521/FREEPDB1
+      STORE_DB_USERNAME: ${STORE_DB_USERNAME:-store_app}
+      STORE_DB_PASSWORD: ${STORE_DB_PASSWORD:-StoreApp123}
+      STORE_SERVICE_PORT: 8081
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_CONNECT_TIMEOUT: 2s
+      REDIS_TIMEOUT: 2s
     depends_on:
       oracle:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8081/actuator/health | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 12
       start_period: 30s
+    restart: unless-stopped
 
   stock-service:
-    build: ./stock-service
+    build:
+      context: ./stock-service
     container_name: stock-service
     ports:
       - "8083:8080"
     environment:
-      - STOCK_DB_URL=jdbc:oracle:thin:@oracle:1521/FREEPDB1
-      - STORE_SERVICE_BASE_URL=http://store-service:8081
-      - REDIS_HOST=redis
+      STOCK_DB_URL: jdbc:oracle:thin:@//oracle:1521/FREEPDB1
+      STOCK_DB_USERNAME: ${STOCK_DB_USERNAME:-stock_app}
+      STOCK_DB_PASSWORD: ${STOCK_DB_PASSWORD:-StockApp123}
+      SERVER_PORT: 8080
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_CONNECT_TIMEOUT: 2s
+      REDIS_TIMEOUT: 2s
+      STORE_SERVICE_BASE_URL: http://store-service:8081
+      STORE_SERVICE_CONNECT_TIMEOUT: 2s
+      STORE_SERVICE_READ_TIMEOUT: 3s
     depends_on:
       oracle:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       store-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 12
       start_period: 30s
+    restart: unless-stopped
 
   capability-service:
-    build: ./capability-service
+    build:
+      context: ./capability-service
     container_name: capability-service
     ports:
       - "8082:8082"
     environment:
-      - CAPABILITY_DB_URL=jdbc:oracle:thin:@oracle:1521/FREEPDB1
-      - STORE_SERVICE_BASE_URL=http://store-service:8081
-      - REDIS_HOST=redis
+      CAPABILITY_DB_URL: jdbc:oracle:thin:@//oracle:1521/FREEPDB1
+      CAPABILITY_DB_USERNAME: ${CAPABILITY_DB_USERNAME:-store_app}
+      CAPABILITY_DB_PASSWORD: ${CAPABILITY_DB_PASSWORD:-StoreApp123}
+      CAPABILITY_SERVICE_PORT: 8082
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_CONNECT_TIMEOUT: 2s
+      REDIS_TIMEOUT: 2s
+      STORE_SERVICE_BASE_URL: http://store-service:8081
+      STORE_SERVICE_CONNECT_TIMEOUT_MS: 2000
+      STORE_SERVICE_READ_TIMEOUT_MS: 3000
     depends_on:
       oracle:
         condition: service_healthy
-      store-service:
-        condition: service_healthy
       redis:
         condition: service_healthy
+      store-service:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8082/actuator/health | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 12
       start_period: 30s
+    restart: unless-stopped
 
   api-gateway:
-    build: ./api-gateway
+    build:
+      context: ./api-gateway
     container_name: api-gateway
     ports:
       - "8085:8085"
     environment:
-      - STOCK_SERVICE_URI=http://stock-service:8080
-      - STORE_SERVICE_URI=http://store-service:8081
-      - CAPABILITY_SERVICE_URI=http://capability-service:8082
-      - REDIS_HOST=redis
-      - FRONTEND_ALLOWED_ORIGINS=http://localhost:8080,http://localhost:5173,http://localhost:3000
+      GATEWAY_PORT: 8085
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_CONNECT_TIMEOUT: 2s
+      REDIS_TIMEOUT: 2s
+      STOCK_SERVICE_URI: http://stock-service:8080
+      STORE_SERVICE_URI: http://store-service:8081
+      CAPABILITY_SERVICE_URI: http://capability-service:8082
+      FRONTEND_ALLOWED_ORIGINS: http://localhost:8080,http://localhost:5173,http://localhost:3000
     depends_on:
+      redis:
+        condition: service_healthy
       stock-service:
         condition: service_healthy
       store-service:
@@ -119,20 +168,35 @@ services:
       capability-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/actuator/health"]
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8085/actuator/health | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 12
       start_period: 30s
+    restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_GATEWAY_URL: /gateway
     container_name: dealer-map-frontend
     ports:
       - "8080:80"
     depends_on:
       api-gateway:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/ | grep -q '<div id=\"root\"></div>'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge
 
 volumes:
   oracle-data:

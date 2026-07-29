@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import { CircleMarker, MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import type { Store } from '../types/api';
 
@@ -49,9 +49,52 @@ const RecenterMap: React.FC<{ center: { lat: number; lng: number }; zoom: number
   return null;
 };
 
+const CurrentLocationControl: React.FC<{ location: { lat: number; lng: number } }> = ({ location }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    const LocationControl = L.Control.extend({
+      options: { position: 'topright' as L.ControlPosition },
+      onAdd: () => {
+        const button = L.DomUtil.create('button', 'leaflet-bar current-location-control');
+        button.type = 'button';
+        button.title = 'Mevcut konumuma git';
+        button.setAttribute('aria-label', 'Mevcut konumuma git');
+        button.innerHTML = `
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+            <circle cx="12" cy="12" r="8"></circle>
+          </svg>
+        `;
+
+        L.DomEvent.disableClickPropagation(button);
+        L.DomEvent.on(button, 'click', () => {
+          map.flyTo([location.lat, location.lng], Math.max(map.getZoom(), 15), {
+            animate: true,
+            duration: 0.7
+          });
+        });
+
+        return button;
+      }
+    });
+
+    const control = new LocationControl();
+    map.addControl(control);
+
+    return () => {
+      map.removeControl(control);
+    };
+  }, [location.lat, location.lng, map]);
+
+  return null;
+};
+
 interface StoreMapProps {
   center: { lat: number; lng: number };
   zoom: number;
+  currentLocation?: { lat: number; lng: number };
   stores: (Store & { distance: number; stockLevel?: string })[];
   selectedStoreId: number | undefined;
   hoveredStoreId?: number | undefined;
@@ -61,6 +104,7 @@ interface StoreMapProps {
 export const StoreMap: React.FC<StoreMapProps> = ({
   center,
   zoom,
+  currentLocation,
   stores,
   selectedStoreId,
   hoveredStoreId,
@@ -78,6 +122,25 @@ export const StoreMap: React.FC<StoreMapProps> = ({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <RecenterMap center={center} zoom={zoom} />
+      {currentLocation && (
+        <>
+          <CurrentLocationControl location={currentLocation} />
+          <CircleMarker
+            center={[currentLocation.lat, currentLocation.lng]}
+            radius={9}
+            pathOptions={{
+              color: '#ffffff',
+              weight: 3,
+              fillColor: '#1677ff',
+              fillOpacity: 1
+            }}
+          >
+            <Tooltip direction="top" offset={[0, -8]}>
+              Mevcut konumunuz
+            </Tooltip>
+          </CircleMarker>
+        </>
+      )}
       {Array.isArray(stores) && stores.map(item => (
         <Marker
           key={item.id}

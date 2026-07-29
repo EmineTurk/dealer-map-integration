@@ -55,10 +55,7 @@ public class ProductStockService {
             throw new ProductNotFoundException(productId);
         }
 
-        List<Stock> availableStocks = stockQueryPort.findByProductId(productId)
-                .stream()
-                .filter(stock -> stock.getQuantity() > 0)
-                .toList();
+        List<Stock> availableStocks = stockQueryPort.findByProductId(productId);
 
         if (availableStocks.isEmpty()) {
             return new ArrayList<>();

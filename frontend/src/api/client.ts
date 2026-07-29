@@ -131,7 +131,7 @@ export const apiService = {
           stockLevel 
         };
       })
-      .filter(s => s.stockLevel !== 'OUT_OF_STOCK' && s.distance <= radius)
+      .filter(s => s.distance <= radius)
       .sort((a, b) => a.distance - b.distance);
     }
   },

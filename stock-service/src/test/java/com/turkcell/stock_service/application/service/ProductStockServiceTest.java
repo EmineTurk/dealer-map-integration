@@ -67,10 +67,13 @@ class ProductStockServiceTest {
     }
 
     @Test
-    void shouldReturnEmptyListWithoutCallingStoreServiceWhenNoStockIsAvailable() {
+    void shouldReturnOutOfStockStoreWhenQuantityIsZero() {
         when(productQueryPort.existsById(1L)).thenReturn(true);
         when(stockQueryPort.findByProductId(1L)).thenReturn(List.of(
                 new Stock(1L, 3L, 0)
+        ));
+        when(storeQueryPort.getStoresByIds(List.of(3L))).thenReturn(List.of(
+                store(3L, 41.0)
         ));
 
         List<StockResponse> result = productStockService.getStoresByProductId(
@@ -80,8 +83,10 @@ class ProductStockServiceTest {
                 10
         );
 
-        assertThat(result).isEmpty();
-        verifyNoInteractions(storeQueryPort);
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).id()).isEqualTo(3L);
+        assertThat(result.get(0).stockLevel()).isEqualTo(StockLevel.OUT_OF_STOCK);
+        verify(storeQueryPort).getStoresByIds(List.of(3L));
     }
 
     @Test
@@ -92,10 +97,11 @@ class ProductStockServiceTest {
                 new Stock(1L, 1L, 4),
                 new Stock(1L, 2L, 6)
         ));
-        when(storeQueryPort.getStoresByIds(List.of(1L, 2L))).thenReturn(List.of(
+        when(storeQueryPort.getStoresByIds(List.of(3L, 1L, 2L))).thenReturn(List.of(
                 store(2L, 41.1),
                 store(99L, 41.05),
-                store(1L, 41.0)
+                store(1L, 41.0),
+                store(3L, 41.05)
         ));
 
         List<StockResponse> result = productStockService.getStoresByProductId(
@@ -105,12 +111,12 @@ class ProductStockServiceTest {
                 20
         );
 
-        assertThat(result).extracting(StockResponse::id).containsExactly(1L, 2L);
+        assertThat(result).extracting(StockResponse::id).containsExactly(1L, 3L, 2L);
         assertThat(result).extracting(StockResponse::stockLevel)
-                .containsExactly(StockLevel.LOW, StockLevel.IN_STOCK);
+                .containsExactly(StockLevel.LOW, StockLevel.OUT_OF_STOCK, StockLevel.IN_STOCK);
         assertThat(result).extracting(StockResponse::distance)
-                .containsExactly(0.0, 11.1);
-        verify(storeQueryPort).getStoresByIds(List.of(1L, 2L));
+                .containsExactly(0.0, 5.6, 11.1);
+        verify(storeQueryPort).getStoresByIds(List.of(3L, 1L, 2L));
     }
 
     private Store store(Long id, double latitude) {

@@ -1,40 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Select, Tag, Badge, Empty, Spin, Alert } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import { StoreCard } from '../components/StoreCard';
 import { StoreMap } from '../components/StoreMap';
 import { StoreDetailsDrawer } from '../components/StoreDetailsDrawer';
+import {
+  LocationSearchFilters,
+  UNLIMITED_RADIUS_KM,
+  type LocationMode,
+  type SearchRadius
+} from '../components/LocationSearchFilters';
 import type { Store, StockLevel, Product } from '../types/api';
 import { apiService, apiStatus } from '../api/client';
+import { ISTANBUL_DISTRICT_COORDS } from '../data/istanbulDistricts';
 import './Pages.css';
 
-const getProductBrand = (name: string): string => {
-  const lower = name.toLowerCase();
-  if (lower.includes('iphone') || lower.includes('apple') || lower.includes('airpods')) return 'Apple';
-  if (lower.includes('samsung') || lower.includes('galaxy')) return 'Samsung';
-  if (lower.includes('xiaomi')) return 'Xiaomi';
-  if (lower.includes('anker')) return 'Anker';
-  if (lower.includes('superbox') || lower.includes('turkcell')) return 'Turkcell';
-  return 'Other';
+const PRODUCT_BRANDS = ['Apple', 'Samsung', 'Xiaomi', 'Turkcell', 'Anker', 'JBL', 'Huawei', 'TP-Link'] as const;
+
+const getProductBrand = (product: Product): string => {
+  const skuPrefix = product.sku.split('-')[0].toUpperCase();
+  const brandBySkuPrefix: Record<string, string> = {
+    APL: 'Apple',
+    SAM: 'Samsung',
+    XIA: 'Xiaomi',
+    TKC: 'Turkcell',
+    ANK: 'Anker',
+    JBL: 'JBL',
+    HUA: 'Huawei',
+    TPL: 'TP-Link'
+  };
+
+  return brandBySkuPrefix[skuPrefix] ?? 'Diğer';
 };
 
 const { Option } = Select;
 
 export const Pasaj: React.FC = () => {
-  const [selectedProductId, setSelectedProductId] = useState<number | undefined>(1); // default to iPhone 15
+  const [selectedProductId, setSelectedProductId] = useState<number | 'ALL' | undefined>(undefined);
   const [selectedStoreId, setSelectedStoreId] = useState<number | undefined>(undefined);
   const [hoveredStoreId, setHoveredStoreId] = useState<number | undefined>(undefined);
   const [mapCenter, setMapCenter] = useState({ lat: 41.0082, lng: 28.9784 });
-  const [zoomLevel, setZoomLevel] = useState(12);
+  const [zoomLevel, setZoomLevel] = useState(10);
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [selectedBrand, setSelectedBrand] = useState<string>('ALL');
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const [selectedBrand, setSelectedBrand] = useState<string | undefined>(undefined);
 
-  // Geolocation & Fallback
-  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number }>({ lat: 41.0082, lng: 28.9784 });
-  const [locationError, setLocationError] = useState(false);
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('');
+  const [locationMode, setLocationMode] = useState<LocationMode | undefined>(undefined);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | undefined>(undefined);
+  const [locationError, setLocationError] = useState<string | undefined>(undefined);
+  const [isLocating, setIsLocating] = useState(false);
+  const [selectedDistrict, setSelectedDistrict] = useState<string | undefined>(undefined);
+  const [searchRadius, setSearchRadius] = useState<SearchRadius | undefined>(undefined);
+  const locationRequestId = useRef(0);
 
   const [isDrawerLoading, setIsDrawerLoading] = useState(false);
 
@@ -44,77 +62,128 @@ export const Pasaj: React.FC = () => {
     queryFn: apiService.getProducts,
   });
 
-  // Try to retrieve user's location via Geolocation API
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
-          setUserCoords(coords);
-          setMapCenter(coords);
-          setLocationError(false);
-        },
-        (error) => {
-          console.warn('Geolocation blocked or failed:', error);
-          setLocationError(true);
-        }
-      );
-    } else {
-      setLocationError(true);
-    }
-  }, []);
+  const handleLocationModeChange = (mode: LocationMode) => {
+    const requestId = ++locationRequestId.current;
+    setLocationMode(mode);
+    setUserCoords(undefined);
+    setSelectedDistrict(undefined);
+    setSearchRadius(undefined);
+    setLocationError(undefined);
+    setIsLocating(false);
+    setSelectedStoreId(undefined);
+    setMapCenter({ lat: 41.0082, lng: 28.9784 });
+    setZoomLevel(10);
 
-  const districtCoords: Record<string, { lat: number; lng: number }> = {
-    Kadikoy: { lat: 40.9901, lng: 29.0253 },
-    Besiktas: { lat: 41.0428, lng: 29.0075 },
-    Sisli: { lat: 41.0602, lng: 28.9877 },
-    Uskudar: { lat: 41.0267, lng: 29.0152 },
-    Fatih: { lat: 41.0186, lng: 28.9497 },
-    Beyoglu: { lat: 41.0370, lng: 28.9764 }
+    if (mode !== 'current') return;
+
+    if (!navigator.geolocation) {
+      setLocationError('Tarayıcınız konum bilgisini desteklemiyor. İlçe seçeneğini kullanabilirsiniz.');
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (locationRequestId.current !== requestId) return;
+        const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
+        setUserCoords(coords);
+        setMapCenter(coords);
+        setZoomLevel(13);
+        setLocationError(undefined);
+        setIsLocating(false);
+      },
+      (error) => {
+        if (locationRequestId.current !== requestId) return;
+        console.warn('Geolocation blocked or failed:', error);
+        setLocationError('Konum izni verilmedi veya konum alınamadı. İlçe seçeneğini kullanabilirsiniz.');
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
   };
 
-  const handleDistrictChange = (value: string) => {
+  const handleDistrictChange = (value?: string) => {
     setSelectedDistrict(value);
-    const coords = districtCoords[value];
+    setSelectedStoreId(undefined);
+    const coords = value ? ISTANBUL_DISTRICT_COORDS[value] : undefined;
     if (coords) {
       setUserCoords(coords);
       setMapCenter(coords);
       setZoomLevel(13);
+    } else {
+      setUserCoords(undefined);
+      setMapCenter({ lat: 41.0082, lng: 28.9784 });
+      setZoomLevel(10);
     }
   };
 
   // Derive list of categories and brands dynamically based on loaded products
   const categories = ['ALL', ...Array.from(new Set(Array.isArray(products) ? products.map(p => p.category) : []))];
-  const brands = ['ALL', ...Array.from(new Set(Array.isArray(products) ? products.map(p => getProductBrand(p.name)) : []))];
+  const availableBrands = new Set(Array.isArray(products) ? products.map(getProductBrand) : []);
+  const brands = [
+    'ALL',
+    ...PRODUCT_BRANDS.filter(brand => availableBrands.has(brand)),
+    ...Array.from(availableBrands).filter(brand => !PRODUCT_BRANDS.includes(brand as typeof PRODUCT_BRANDS[number]))
+  ];
 
   // Filtered products list based on selected category and brand
   const filteredProducts = Array.isArray(products) ? products.filter(p => {
-    const matchesCategory = selectedCategory === 'ALL' || p.category === selectedCategory;
-    const matchesBrand = selectedBrand === 'ALL' || getProductBrand(p.name) === selectedBrand;
+    const matchesCategory = !selectedCategory || selectedCategory === 'ALL' || p.category === selectedCategory;
+    const matchesBrand = !selectedBrand || selectedBrand === 'ALL' || getProductBrand(p) === selectedBrand;
     return matchesCategory && matchesBrand;
   }) : [];
 
-  // Auto-select first matching product if the current selection is filtered out
-  useEffect(() => {
-    if (Array.isArray(filteredProducts) && filteredProducts.length > 0) {
-      const isStillAvailable = filteredProducts.some(p => p.id === selectedProductId);
-      if (!isStillAvailable) {
-        setSelectedProductId(filteredProducts[0].id);
-      }
-    } else {
-      setSelectedProductId(undefined);
-    }
-  }, [selectedCategory, selectedBrand, filteredProducts, selectedProductId]);
+  const isLocationReady = Boolean(
+    userCoords
+    && (
+      (locationMode === 'current' && searchRadius)
+      || (locationMode === 'district' && selectedDistrict)
+    )
+  );
+  const isSearchReady = Boolean(
+    selectedCategory
+    && selectedBrand
+    && selectedProductId !== undefined
+    && isLocationReady
+  );
 
   // Load store stocks from API using TanStack Query
   const { data: storeStocksList = [], isLoading: isStoreLoading } = useQuery<(Store & { stockLevel: StockLevel; distance: number; quantity?: number })[]>({
-    queryKey: ['productStores', selectedProductId, userCoords.lat, userCoords.lng],
-    queryFn: () => selectedProductId 
-      ? apiService.getProductStores(selectedProductId, userCoords.lat, userCoords.lng, 10).then(data => 
-          data.map(item => ({ ...item, quantity: item.quantity ?? 0 }))
+    queryKey: ['productStores', selectedProductId, userCoords?.lat, userCoords?.lng, locationMode, selectedDistrict, searchRadius],
+    queryFn: async () => {
+      if (selectedProductId === undefined || !userCoords) return [];
+
+      const radius = locationMode === 'district' || searchRadius === 'UNLIMITED'
+        ? UNLIMITED_RADIUS_KM
+        : searchRadius;
+      if (!radius) return [];
+
+      const productIds = selectedProductId === 'ALL'
+        ? filteredProducts.map(product => product.id)
+        : [selectedProductId];
+      const storeResults = await Promise.all(
+        productIds.map(productId =>
+          apiService.getProductStores(productId, userCoords.lat, userCoords.lng, radius)
         )
-      : Promise.resolve([]),
-    enabled: !!selectedProductId,
+      );
+      const stockPriority: Record<StockLevel, number> = {
+        OUT_OF_STOCK: 0,
+        LOW: 1,
+        IN_STOCK: 2
+      };
+      const storesById = new Map<number, Store & { stockLevel: StockLevel; distance: number; quantity?: number }>();
+
+      storeResults.flat().forEach(item => {
+        if (locationMode === 'district' && selectedDistrict && item.district !== selectedDistrict) return;
+        const existing = storesById.get(item.id);
+        if (!existing || stockPriority[item.stockLevel] > stockPriority[existing.stockLevel]) {
+          storesById.set(item.id, item);
+        }
+      });
+
+      return Array.from(storesById.values()).sort((a, b) => a.distance - b.distance);
+    },
+    enabled: isSearchReady,
   });
 
   const selectedStore = storeStocksList.find(s => s.id === selectedStoreId);
@@ -122,11 +191,13 @@ export const Pasaj: React.FC = () => {
   // Reset selection and adjust center when product changes
   useEffect(() => {
     setSelectedStoreId(undefined);
-    setZoomLevel(12);
-    if (storeStocksList.length > 0) {
-      setMapCenter({ lat: storeStocksList[0].latitude, lng: storeStocksList[0].longitude });
+    if (selectedDistrict) {
+      setZoomLevel(13);
+    } else {
+      setMapCenter({ lat: 41.0082, lng: 28.9784 });
+      setZoomLevel(10);
     }
-  }, [selectedProductId, storeStocksList.length]);
+  }, [selectedProductId, selectedDistrict, storeStocksList.length]);
 
   // Simulate loading state whenever a store details panel opens
   useEffect(() => {
@@ -156,7 +227,7 @@ export const Pasaj: React.FC = () => {
 
   const getStockLabel = (level: StockLevel) => {
     switch (level) {
-      case 'IN_STOCK': return 'Stokta Var (>5)';
+      case 'IN_STOCK': return 'Stokta';
       case 'LOW': return 'Düşük Stok';
       case 'OUT_OF_STOCK': return 'Stokta Yok';
       default: return 'Bilinmiyor';
@@ -170,21 +241,11 @@ export const Pasaj: React.FC = () => {
         style={{ 
           display: 'flex', 
           alignItems: 'center', 
-          gap: '0.75rem',
           marginTop: '0.5rem'
         }}
       >
-        <div 
-          style={{ 
-            fontSize: '1.75rem', 
-            fontWeight: 800, 
-            color: selectedStore.stockLevel === 'IN_STOCK' ? 'var(--color-success)' : 'var(--color-warning)'
-          }}
-        >
-          {selectedStore.quantity} Adet
-        </div>
-        <Tag color={selectedStore.stockLevel === 'IN_STOCK' ? 'success' : 'warning'}>
-          {selectedStore.stockLevel === 'IN_STOCK' ? 'Stokta Var' : 'Düşük Stok'}
+        <Tag color={getStockTagColor(selectedStore.stockLevel)} style={{ fontSize: '0.95rem', padding: '0.25rem 0.75rem' }}>
+          {getStockLabel(selectedStore.stockLevel)}
         </Tag>
       </div>
     </div>
@@ -218,43 +279,17 @@ export const Pasaj: React.FC = () => {
             />
           )}
 
-          {locationError && (
-            <div style={{ marginBottom: '1.25rem' }}>
-              <Alert
-                message="Konum İzni Yok"
-                description="Tarayıcı konum izni verilmedi. Varsayılan koordinatlar kullanılıyor. Lütfen bölge seçin:"
-                type="info"
-                showIcon
-                style={{ marginBottom: '0.75rem', borderRadius: '8px' }}
-              />
-              <div className="location-fallback-panel" style={{ padding: '0.75rem 1rem', border: '1px solid rgba(255, 199, 44, 0.2)', borderRadius: '8px', background: 'rgba(255, 199, 44, 0.02)' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <div>
-                    <label className="filter-label" style={{ fontSize: '0.7rem', display: 'block', marginBottom: '0.25rem' }}>İl</label>
-                    <Select defaultValue="Istanbul" style={{ width: '100%' }} disabled>
-                      <Option value="Istanbul">İstanbul</Option>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="filter-label" style={{ fontSize: '0.7rem', display: 'block', marginBottom: '0.25rem' }}>İlçe</label>
-                    <Select 
-                      placeholder="İlçe Seçin" 
-                      style={{ width: '100%' }}
-                      onChange={handleDistrictChange}
-                      value={selectedDistrict || undefined}
-                    >
-                      <Option value="Kadikoy">Kadıköy</Option>
-                      <Option value="Besiktas">Beşiktaş</Option>
-                      <Option value="Sisli">Şişli</Option>
-                      <Option value="Uskudar">Üsküdar</Option>
-                      <Option value="Fatih">Fatih</Option>
-                      <Option value="Beyoglu">Beyoğlu</Option>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          <LocationSearchFilters
+            locationMode={locationMode}
+            selectedDistrict={selectedDistrict}
+            searchRadius={searchRadius}
+            isLocating={isLocating}
+            locationError={locationError}
+            hasCurrentLocation={locationMode === 'current' && Boolean(userCoords)}
+            onLocationModeChange={handleLocationModeChange}
+            onDistrictChange={handleDistrictChange}
+            onRadiusChange={setSearchRadius}
+          />
 
           <h3 className="sidebar-title">Ürün Kataloğu</h3>
           
@@ -263,9 +298,11 @@ export const Pasaj: React.FC = () => {
             <Select 
               value={selectedCategory} 
               style={{ width: '100%' }} 
+              placeholder="Kategori seçiniz"
+              allowClear
               onChange={(val) => {
                 setSelectedCategory(val);
-                setSelectedBrand('ALL');
+                setSelectedProductId(undefined);
               }}
             >
               {categories.map(cat => (
@@ -279,7 +316,12 @@ export const Pasaj: React.FC = () => {
             <Select 
               value={selectedBrand} 
               style={{ width: '100%' }} 
-              onChange={(val) => setSelectedBrand(val)}
+              placeholder="Marka seçiniz"
+              allowClear
+              onChange={(val) => {
+                setSelectedBrand(val);
+                setSelectedProductId(undefined);
+              }}
             >
               {brands.map(brand => (
                 <Option key={brand} value={brand}>{brand === 'ALL' ? 'Tümü' : brand}</Option>
@@ -292,9 +334,12 @@ export const Pasaj: React.FC = () => {
             <Select 
               value={selectedProductId} 
               style={{ width: '100%' }} 
+              placeholder="Ürün seçiniz"
+              allowClear
               onChange={(val) => setSelectedProductId(val)}
               disabled={filteredProducts.length === 0}
             >
+              <Option value="ALL">Tümü</Option>
               {filteredProducts.map(product => (
                 <Option key={product.id} value={product.id}>
                   {product.name}
@@ -305,12 +350,17 @@ export const Pasaj: React.FC = () => {
 
           <div className="filter-group" style={{ marginTop: '1rem' }}>
             <span className="filter-label">
-              Bulunan Mağazalar ({storeStocksList.length})
+              Bu Ürünü Satan Bayiler ({storeStocksList.length})
             </span>
           </div>
 
           <div className="card-list">
-            {isStoreLoading ? (
+            {!isSearchReady ? (
+              <Empty
+                description="Bayi aramak için tüm filtreleri ve konum bilgilerini seçin."
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            ) : isStoreLoading ? (
               <div style={{ textAlign: 'center', padding: '2.5rem 0' }}>
                 <Spin tip="Stoktaki mağazalar yükleniyor..." size="large" />
               </div>
@@ -358,14 +408,23 @@ export const Pasaj: React.FC = () => {
 
         {/* Map View Area */}
         <main className="locator-main glass-panel" style={{ padding: '0.5rem', overflow: 'hidden', zIndex: 1 }}>
-          <StoreMap
-            center={mapCenter}
-            zoom={zoomLevel}
-            stores={storeStocksList}
-            selectedStoreId={selectedStoreId}
-            hoveredStoreId={hoveredStoreId}
-            onStoreSelect={handleStoreSelect}
-          />
+          {isSearchReady ? (
+            <StoreMap
+              center={mapCenter}
+              zoom={zoomLevel}
+              currentLocation={locationMode === 'current' ? userCoords : undefined}
+              stores={storeStocksList}
+              selectedStoreId={selectedStoreId}
+              hoveredStoreId={hoveredStoreId}
+              onStoreSelect={handleStoreSelect}
+            />
+          ) : (
+            <Empty
+              description="Haritayı görmek için tüm filtreleri seçiniz."
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              style={{ paddingTop: '8rem' }}
+            />
+          )}
         </main>
       </div>
 

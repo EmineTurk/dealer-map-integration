@@ -12,37 +12,41 @@
 
 ```txt
 dealer-map-integration
-├── docker-compose.yml   (Oracle Free + Redis)
+├── docker-compose.yml   (tüm sistem)
 ├── docker/oracle/init   (shared Oracle users)
 ├── api-gateway          (port 8085 — ortak API Gateway)
-├── stock-service        (port 8080 — Pasaj / Backend A)
+├── stock-service        (container port 8080 — Pasaj / Backend A)
 ├── store-service        (port 8081 — Bayi master data / Backend B)
 ├── capability-service   (port 8082 — İşlem yetkinliği / Backend B)
 ├── frontend
 └── docs
 ```
 
-## Local Infrastructure
+## Tek Komutla Çalıştırma
 
-Java 21 is required for all backend services. Every Maven module enforces this
-version so an unsupported JDK fails at the start of the build.
-
-On Windows, each `mvnw.cmd` automatically selects an IntelliJ-installed
-`%USERPROFILE%\.jdks\corretto-21*` JDK before starting Maven. If Java 21 is
-installed elsewhere, set `DEALER_MAP_JAVA_HOME` to that JDK directory. This
-project-specific setting takes precedence over the machine-wide Java `PATH`.
-
-Verify the selected runtime from any backend module:
-
-```powershell
-.\mvnw.cmd -version
-```
+Docker Desktop çalışırken proje kökünde:
 
 ```bash
-docker compose up -d oracle redis
+docker compose up -d --build --wait
+```
+
+Container durumlarını görmek için:
+
+```bash
 docker compose ps
 ```
 
+Sistemi durdurmak için:
+
+```bash
+docker compose down
+```
+
+- Frontend: http://localhost:8080
+- API Gateway health: http://localhost:8085/actuator/health
+- Stock service: http://localhost:8083
+- Store service: http://localhost:8081
+- Capability service: http://localhost:8082
 - Oracle container: `turkcell-oracle`
 - Oracle port/service: `1521` / `FREEPDB1`
 - Store schema: `store_app` / `StoreApp123`
@@ -51,10 +55,22 @@ docker compose ps
 - Oracle init: `docker/oracle/init/`, `store-service/sql/`, `stock-service/sql/`
 - API contract: [`docs/api-contract.md`](docs/api-contract.md)
 
-Only `turkcell-oracle` should use host port `1521`. A legacy `oracle-db`
-container is not part of Compose and must remain stopped after its data has
-been migrated. Do not remove an Oracle container or the `oracle-data` volume
-without a verified backup.
+Compose; Oracle → Redis → Store → Stock/Capability → Gateway → Frontend
+başlatma sırasını healthcheck ve `depends_on` koşullarıyla yönetir. Frontend
+istekleri Nginx üzerinden Compose ağındaki API Gateway'e aktarılır.
+
+`docker compose down` veritabanı verisini silmez. Oracle ve Redis volume'larını
+da silmek isterseniz ayrıca `--volumes` gerekir; mevcut veriyi korumak için bu
+seçeneği normal kullanımda eklemeyin.
+
+## Local Development
+
+Java 21 is required for all backend services. Every Maven module enforces this
+version so an unsupported JDK fails at the start of the build.
+
+On Windows, each `mvnw.cmd` automatically selects an IntelliJ-installed
+`%USERPROFILE%\.jdks\corretto-21*` JDK before starting Maven. If Java 21 is
+installed elsewhere, set `DEALER_MAP_JAVA_HOME` to that JDK directory.
 
 ## Backend B (store + capability)
 
