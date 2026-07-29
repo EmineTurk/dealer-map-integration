@@ -110,6 +110,7 @@ services:
       - STORE_SERVICE_URI=http://store-service:8081
       - CAPABILITY_SERVICE_URI=http://capability-service:8082
       - REDIS_HOST=redis
+      - FRONTEND_ALLOWED_ORIGINS=http://localhost:8080,http://localhost:5173,http://localhost:3000
     depends_on:
       stock-service:
         condition: service_healthy
