@@ -1,8 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import { apiStatus } from '../api/client';
 import './Navbar.css';
 
 export const Navbar: React.FC = () => {
+  const [isFallback, setIsFallback] = useState(apiStatus.isUsingFallback);
+
+  // Poll status periodically to react to fallback state changes reactively
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (apiStatus.isUsingFallback !== isFallback) {
+        setIsFallback(apiStatus.isUsingFallback);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isFallback]);
+
+  const statusClass = isFallback ? 'status-fallback' : 'status-real';
+
   return (
     <header className="navbar-header glass-panel">
       <div className="navbar-container">
@@ -33,9 +48,11 @@ export const Navbar: React.FC = () => {
           </NavLink>
         </nav>
 
-        <div className="navbar-status">
+        <div className={`navbar-status ${statusClass}`}>
           <span className="status-dot"></span>
-          <span className="status-label">Simüle API Aktif</span>
+          <span className="status-label">
+            {isFallback ? 'Simüle API Aktif' : 'Gerçek API Aktif'}
+          </span>
         </div>
       </div>
     </header>

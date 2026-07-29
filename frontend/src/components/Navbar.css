@@ -72,26 +72,48 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.8rem;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
   border-radius: 50px;
+  transition: all var(--transition-fast);
 }
 
 .status-dot {
   width: 8px;
   height: 8px;
-  background-color: var(--color-success);
   border-radius: 50%;
-  animation: statusPulse 2s infinite;
 }
 
 .status-label {
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+/* Real API (Green) */
+.navbar-status.status-real {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.navbar-status.status-real .status-dot {
+  background-color: var(--color-success);
+  animation: statusPulseGreen 2s infinite;
+}
+.navbar-status.status-real .status-label {
   color: var(--color-success);
 }
 
-@keyframes statusPulse {
+/* Fallback API (Yellow) */
+.navbar-status.status-fallback {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+.navbar-status.status-fallback .status-dot {
+  background-color: var(--turkcell-yellow);
+  animation: statusPulseYellow 2s infinite;
+}
+.navbar-status.status-fallback .status-label {
+  color: var(--turkcell-yellow);
+}
+
+@keyframes statusPulseGreen {
   0% {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
@@ -103,6 +125,21 @@
   100% {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes statusPulseYellow {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 199, 44, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(255, 199, 44, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 199, 44, 0);
   }
 }
 
