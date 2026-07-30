@@ -381,9 +381,9 @@ export const Pasaj: React.FC = () => {
                           {getStockLabel(item.stockLevel)}
                         </Tag>
                         {item.type === 'TIM' ? (
-                          <Badge status="processing" text="TIM" style={{ color: 'rgba(0,0,0,0.45)', fontSize: '0.8rem' }} />
+                          <Badge className="store-type-badge" status="processing" text="TIM" />
                         ) : (
-                          <Badge status="default" text="Franchise" style={{ color: 'rgba(0,0,0,0.25)', fontSize: '0.8rem' }} />
+                          <Badge className="store-type-badge" status="processing" text="Franchise" />
                         )}
                       </div>
                     }
