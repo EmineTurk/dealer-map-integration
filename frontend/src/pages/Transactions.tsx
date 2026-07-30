@@ -449,7 +449,7 @@ export const Transactions: React.FC = () => {
                     isSelected={item.id === selectedStoreId}
                     onClick={() => handleStoreSelect(item)}
                     extra={
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
                           {item.type === 'TIM' ? (
                             <Tag color="blue">TIM</Tag>
@@ -457,9 +457,6 @@ export const Transactions: React.FC = () => {
                             <Tag color="cyan">Franchise</Tag>
                           )}
                         </div>
-                        <span style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.45)' }}>
-                          📍 {item.distance} km uzakta
-                        </span>
                       </div>
                     }
                   />
