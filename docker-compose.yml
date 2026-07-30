@@ -48,6 +48,7 @@ services:
       timeout: 3s
       retries: 20
 
+  # Backend B — bayi master data (shared bounded context)
   store-service:
     build:
       context: ./store-service
@@ -69,11 +70,12 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
+      # Actuator UP = DB + Redis bağlı (depends_on healthy sonrası ikinci güvenlik ağı)
       test: ["CMD-SHELL", "wget -q -O - http://localhost:8081/actuator/health | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 30s
+      retries: 18
+      start_period: 45s
     restart: unless-stopped
 
   stock-service:
@@ -109,6 +111,7 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Backend B — com.tr işlem yetkinliği (store-service DNS adı ile konuşur)
   capability-service:
     build:
       context: ./capability-service
@@ -124,6 +127,7 @@ services:
       REDIS_PORT: 6379
       REDIS_CONNECT_TIMEOUT: 2s
       REDIS_TIMEOUT: 2s
+      # Compose ağı: localhost değil servis adı (Day 17)
       STORE_SERVICE_BASE_URL: http://store-service:8081
       STORE_SERVICE_CONNECT_TIMEOUT_MS: 2000
       STORE_SERVICE_READ_TIMEOUT_MS: 3000
@@ -138,8 +142,8 @@ services:
       test: ["CMD-SHELL", "wget -q -O - http://localhost:8082/actuator/health | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 30s
+      retries: 18
+      start_period: 45s
     restart: unless-stopped
 
   api-gateway:

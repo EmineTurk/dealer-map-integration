@@ -37,6 +37,14 @@ management:
     web:
       exposure:
         include: health,info,caches
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    # Compose healthcheck: Oracle + Redis hazır olmadan UP dönmesin
+    defaults:
+      enabled: true
 
 logging:
   level:
