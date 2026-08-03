@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import './Pages.css';
@@ -6,11 +6,11 @@ import './Pages.css';
 const PasajIcon = () => (
   <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '1rem' }}>
     {/* Handle */}
-    <path d="M25 21C25 15.5 28.1 12 32 12C35.9 12 39 15.5 39 21" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round"/>
+    <path d="M25 21C25 15 28 12 32 12C36 12 39 15 39 21" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round"/>
+    {/* Outer bag wrapper */}
+    <path d="M24 23.5C18 26.5 15 33 15 41C15 50.5 22.5 58 32 58C41.5 58 49 50.5 49 41C49 33 46 26.5 40 23.5" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
     {/* Inner P shape */}
-    <path d="M28 50V30C28 25 31.5 23 37 23C43.5 23 48.5 27 48.5 34C48.5 41 43.5 45 37 45H28" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
-    {/* Outer bag wrap */}
-    <path d="M24 26C18.5 28.5 15 34 15 41C15 50.5 22.5 58 32 58C41.5 58 49 50.5 49 41C49 37 47.5 33.5 45 31" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M28 46V30H36C41 30 41 38 36 38H28" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -20,31 +20,32 @@ const TurkcellIcon = () => (
   </svg>
 );
 
-const AnimatedCounter: React.FC<{ target: number }> = ({ target }) => {
+const AnimatedCounter: React.FC<{ target: number; isVisible: boolean }> = ({ target, isVisible }) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
+    if (!isVisible) {
+      setCount(0);
+      return;
+    }
+
     let start = 0;
     const end = target;
-    if (start === end) return;
-
-    const duration = 1000; // 1 second total animation
-    const steps = 30; // 30 updates
-    const increment = Math.max(1, Math.ceil(end / steps));
-    const stepTime = duration / (end / increment);
+    const duration = 2500; // Slower count speed (2.5 seconds)
+    const totalSteps = 60; // 60 smooth update frames
+    const stepTime = duration / totalSteps;
 
     const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setCount(end);
+      start += 1;
+      const currentVal = Math.min(end, Math.ceil((start / totalSteps) * end));
+      setCount(currentVal);
+      if (start >= totalSteps) {
         clearInterval(timer);
-      } else {
-        setCount(start);
       }
     }, stepTime);
 
     return () => clearInterval(timer);
-  }, [target]);
+  }, [target, isVisible]);
 
   return <>{count}</>;
 };
@@ -52,6 +53,29 @@ const AnimatedCounter: React.FC<{ target: number }> = ({ target }) => {
 export const Home: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const [metricsVisible, setMetricsVisible] = useState(false);
+  const metricsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setMetricsVisible(true);
+        }
+      },
+      { threshold: 0.15 } // Trigger when 15% of the element is visible
+    );
+
+    if (metricsRef.current) {
+      observer.observe(metricsRef.current);
+    }
+
+    return () => {
+      if (metricsRef.current) {
+        observer.unobserve(metricsRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="page-container home-page animate-fade-in">
@@ -95,24 +119,24 @@ export const Home: React.FC = () => {
       </div>
 
       {/* Metrics Section */}
-      <section className="system-metrics">
+      <section className="system-metrics" ref={metricsRef}>
         <h3 className="section-heading">{t('metricsTitle')}</h3>
         <div className="metrics-grid">
           <div className="metric-box glass-panel">
             <span className="metric-value">
-              <AnimatedCounter target={100} />
+              <AnimatedCounter target={100} isVisible={metricsVisible} />
             </span>
             <span className="metric-label">{t('metric1Label')}</span>
           </div>
           <div className="metric-box glass-panel">
             <span className="metric-value">
-              <AnimatedCounter target={20} />
+              <AnimatedCounter target={20} isVisible={metricsVisible} />
             </span>
             <span className="metric-label">{t('metric2Label')}</span>
           </div>
           <div className="metric-box glass-panel">
             <span className="metric-value">
-              <AnimatedCounter target={5} />
+              <AnimatedCounter target={5} isVisible={metricsVisible} />
             </span>
             <span className="metric-label">{t('metric3Label')}</span>
           </div>
