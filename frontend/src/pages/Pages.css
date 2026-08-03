@@ -553,3 +553,57 @@
   fill: currentColor;
   stroke: none;
 }
+
+/* Animated Waving Mascot Styles */
+.mascot-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  perspective: 1000px;
+}
+
+.mascot-head {
+  animation: mascot-hover 3.5s infinite ease-in-out;
+  transform-origin: 9px 9px;
+}
+
+.mascot-arm {
+  animation: mascot-wave 1.6s infinite ease-in-out;
+  transform-origin: 14.5px 11.5px;
+}
+
+@keyframes mascot-hover {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(3deg); }
+}
+
+@keyframes mascot-wave {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-25deg); }
+}
+
+/* Card Glow Hover Animations */
+.module-card {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.module-card:hover {
+  transform: translateY(-8px);
+}
+
+.module-card:nth-child(1):hover {
+  box-shadow: 0 10px 30px rgba(0, 86, 179, 0.25), 0 0 0 1px rgba(96, 165, 250, 0.2);
+}
+
+.module-card:nth-child(2):hover {
+  box-shadow: 0 10px 30px rgba(255, 199, 44, 0.15), 0 0 0 1px rgba(253, 224, 71, 0.2);
+}
+
+/* Float logo icons on card hover */
+.module-card:hover .module-icon-container {
+  transform: translateY(-4px) scale(1.05);
+}
+
+.module-icon-container {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
