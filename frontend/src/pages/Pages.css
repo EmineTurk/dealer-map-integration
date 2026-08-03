@@ -567,28 +567,13 @@
   display: inline-block;
 }
 
-.emocan-img {
-  width: 140px;
+.emocan-video {
+  width: 160px;
   height: auto;
   display: block;
-  transform-origin: bottom center; /* Pivot from the feet to create a natural sway */
-  animation: emocan-dance 3s infinite ease-in-out;
-  filter: drop-shadow(0 8px 20px rgba(0, 86, 179, 0.25));
-}
-
-@keyframes emocan-dance {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg) scale(1);
-  }
-  25% {
-    transform: translateY(-6px) rotate(-4deg) scale(1.03);
-  }
-  50% {
-    transform: translateY(0) rotate(3deg) scale(0.98);
-  }
-  75% {
-    transform: translateY(-6px) rotate(-3deg) scale(1.03);
-  }
+  border-radius: 16px;
+  filter: drop-shadow(0 8px 25px rgba(0, 86, 179, 0.35));
+  pointer-events: none;
 }
 
 /* Card Glow Hover Animations */

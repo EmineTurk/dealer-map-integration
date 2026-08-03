@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import emocanImg from '../assets/emocan.png';
+import emocanVideo from '../assets/emocan.mp4';
 import './Pages.css';
 
 const PasajIcon = () => (
@@ -25,7 +25,14 @@ const TurkcellIcon = () => (
 const WavingMascot = () => (
   <div className="mascot-container">
     <div className="emocan-wrapper">
-      <img src={emocanImg} alt="Turkcell Emocan" className="emocan-img" />
+      <video
+        src={emocanVideo}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="emocan-video"
+      />
     </div>
   </div>
 );
