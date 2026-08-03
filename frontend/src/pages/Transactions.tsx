@@ -491,6 +491,7 @@ export const Transactions: React.FC = () => {
               selectedStoreId={selectedStoreId}
               hoveredStoreId={hoveredStoreId}
               onStoreSelect={handleStoreSelect}
+              pageType="transaction"
             />
           ) : (
             <Empty

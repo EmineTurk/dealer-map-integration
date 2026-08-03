@@ -419,6 +419,7 @@ export const Pasaj: React.FC = () => {
               selectedStoreId={selectedStoreId}
               hoveredStoreId={hoveredStoreId}
               onStoreSelect={handleStoreSelect}
+              pageType="stock"
             />
           ) : (
             <Empty

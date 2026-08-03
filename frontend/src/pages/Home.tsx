@@ -4,21 +4,24 @@ import { useLanguage } from '../context/LanguageContext';
 import './Pages.css';
 
 const PasajIcon = () => (
-  <svg width="54" height="54" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '1rem' }}>
-    <path d="M15 17V12C15 9.23858 17.2386 7 20 7H28C30.7614 7 33 9.23858 33 12V17" stroke="var(--turkcell-yellow)" strokeWidth="3.5" strokeLinecap="round"/>
-    <rect x="8" y="16" width="32" height="25" rx="5" fill="rgba(255, 199, 44, 0.1)" stroke="var(--turkcell-yellow)" strokeWidth="3.5"/>
-    <circle cx="24" cy="28" r="4" fill="var(--turkcell-yellow)"/>
-    <path d="M20 28H28" stroke="var(--turkcell-yellow)" strokeWidth="2.5" strokeLinecap="round"/>
+  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '1rem' }}>
+    {/* Curved handle on top */}
+    <path d="M24 22C24 16 28 12 32 12C36 12 40 16 40 22" stroke="var(--turkcell-yellow)" strokeWidth="5.5" strokeLinecap="round"/>
+    {/* Outer stylized P bag body */}
+    <path d="M24 49V26C24 20 30 18 39 18C48 18 53 23 53 31.5C53 40 45 44.5 36.5 44.5H29.5V33C29.5 29 35 28 38 31C41 33.5 39 39.5 33 39.5" stroke="var(--turkcell-yellow)" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
 const TurkcellIcon = () => (
-  <svg width="54" height="54" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '1rem' }}>
-    <circle cx="24" cy="24" r="18" fill="rgba(0, 86, 179, 0.15)" stroke="var(--turkcell-blue-light)" strokeWidth="3.5"/>
-    <circle cx="24" cy="24" r="7" fill="var(--turkcell-yellow)" stroke="white" strokeWidth="2"/>
-    <path d="M14 18C14 14.5 17.5 11 24 11C30.5 11 34 14.5 34 18" stroke="var(--turkcell-yellow)" strokeWidth="3.5" strokeLinecap="round"/>
-    <path d="M11 15L7 10" stroke="var(--turkcell-yellow)" strokeWidth="3" strokeLinecap="round"/>
-    <path d="M37 15L41 10" stroke="var(--turkcell-yellow)" strokeWidth="3" strokeLinecap="round"/>
+  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '1rem' }}>
+    {/* Solid yellow circle base */}
+    <circle cx="32" cy="32" r="28" fill="var(--turkcell-yellow)"/>
+    {/* Left shorter feeler */}
+    <path d="M19 46C20 40 24 35 30 33C33 32 35 33 36 35C37 37 35 40 31 41C27 42 24 45 23 48" stroke="white" strokeWidth="4.5" strokeLinecap="round"/>
+    <circle cx="36" cy="35" r="3.5" fill="white"/>
+    {/* Right longer feeler */}
+    <path d="M26 48C28 36 36 26 48 20C51 18.5 53 20 53 22C53 24 50 27 45 29C39 31.5 33 39 31 50" stroke="white" strokeWidth="4.5" strokeLinecap="round"/>
+    <circle cx="53" cy="22" r="3.5" fill="white"/>
   </svg>
 );
 
