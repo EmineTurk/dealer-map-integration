@@ -5,23 +5,18 @@ import './Pages.css';
 
 const PasajIcon = () => (
   <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '1rem' }}>
-    {/* Curved handle on top */}
-    <path d="M24 22C24 16 28 12 32 12C36 12 40 16 40 22" stroke="var(--turkcell-yellow)" strokeWidth="5.5" strokeLinecap="round"/>
-    {/* Outer stylized P bag body */}
-    <path d="M24 49V26C24 20 30 18 39 18C48 18 53 23 53 31.5C53 40 45 44.5 36.5 44.5H29.5V33C29.5 29 35 28 38 31C41 33.5 39 39.5 33 39.5" stroke="var(--turkcell-yellow)" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round"/>
+    {/* Handle */}
+    <path d="M25 21C25 15.5 28.1 12 32 12C35.9 12 39 15.5 39 21" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round"/>
+    {/* Inner P shape */}
+    <path d="M28 50V30C28 25 31.5 23 37 23C43.5 23 48.5 27 48.5 34C48.5 41 43.5 45 37 45H28" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+    {/* Outer bag wrap */}
+    <path d="M24 26C18.5 28.5 15 34 15 41C15 50.5 22.5 58 32 58C41.5 58 49 50.5 49 41C49 37 47.5 33.5 45 31" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
 const TurkcellIcon = () => (
-  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '1rem' }}>
-    {/* Solid yellow circle base */}
-    <circle cx="32" cy="32" r="28" fill="var(--turkcell-yellow)"/>
-    {/* Left shorter feeler */}
-    <path d="M19 46C20 40 24 35 30 33C33 32 35 33 36 35C37 37 35 40 31 41C27 42 24 45 23 48" stroke="white" strokeWidth="4.5" strokeLinecap="round"/>
-    <circle cx="36" cy="35" r="3.5" fill="white"/>
-    {/* Right longer feeler */}
-    <path d="M26 48C28 36 36 26 48 20C51 18.5 53 20 53 22C53 24 50 27 45 29C39 31.5 33 39 31 50" stroke="white" strokeWidth="4.5" strokeLinecap="round"/>
-    <circle cx="53" cy="22" r="3.5" fill="white"/>
+  <svg width="64" height="64" viewBox="0 0 18.031 18.031" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '1rem' }}>
+    <path d="M9.0155 0C4.0356 0 0 4.03 0 9c0 .119.0042.2387.0099.3584.8696-1.697 2.5913-3.649 5.0369-4.827-.0042-.0543-.0092-.1106-.0092-.1677 0-1.1442.9288-2.0716 2.076-2.0716 1.1456 0 2.0744.9274 2.0744 2.0716 0 1.1443-.9288 2.071-2.0745 2.071-.6746 0-1.2731-.3232-1.652-.8218-2.5385 1.4964-3.8546 4.5652-4.0377 8.2374a8.979 8.979 0 001.7365 1.9858c1.4738-3.5004 3.935-6.001 8.6958-7.5572-.0007-.0281-.0042-.0542-.0042-.0824 0-1.1435.9288-2.071 2.0745-2.071 1.1464 0 2.0752.9282 2.0752 2.071 0 1.1443-.9288 2.071-2.0752 2.071-.6866 0-1.2936-.333-1.671-.8478-3.6779 1.6907-6.022 5.4784-6.127 8.1036a8.9882 8.9882 0 002.8885.4746c4.9799 0 9.0155-4.0272 9.0155-8.9993C18.031 4.03 13.996 0 9.0154 0z" fill="var(--turkcell-yellow)"/>
   </svg>
 );
 
