@@ -571,29 +571,24 @@
   width: 140px;
   height: auto;
   display: block;
-  animation: emocan-float 3s infinite ease-in-out;
-  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+  transform-origin: bottom center; /* Pivot from the feet to create a natural sway */
+  animation: emocan-dance 3s infinite ease-in-out;
+  filter: drop-shadow(0 8px 20px rgba(0, 86, 179, 0.25));
 }
 
-.emocan-waving-hand {
-  position: absolute;
-  top: 72px;
-  right: -5px;
-  width: 45px;
-  height: 45px;
-  transform-origin: 5px 35px;
-  animation: emocan-wave 1.5s infinite ease-in-out;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
-}
-
-@keyframes emocan-float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-6px) rotate(2deg); }
-}
-
-@keyframes emocan-wave {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-35deg); }
+@keyframes emocan-dance {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translateY(-6px) rotate(-4deg) scale(1.03);
+  }
+  50% {
+    transform: translateY(0) rotate(3deg) scale(0.98);
+  }
+  75% {
+    transform: translateY(-6px) rotate(-3deg) scale(1.03);
+  }
 }
 
 /* Card Glow Hover Animations */

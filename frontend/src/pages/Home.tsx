@@ -26,12 +26,6 @@ const WavingMascot = () => (
   <div className="mascot-container">
     <div className="emocan-wrapper">
       <img src={emocanImg} alt="Turkcell Emocan" className="emocan-img" />
-      <svg className="emocan-waving-hand" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Sleeve (dark navy blue) */}
-        <path d="M 5 35 L 25 20" stroke="#122752" strokeWidth="11" strokeLinecap="round" />
-        {/* Hand (yellow) */}
-        <path d="M 25 20 L 35 12" stroke="var(--turkcell-yellow)" strokeWidth="11" strokeLinecap="round" />
-      </svg>
     </div>
   </div>
 );
