@@ -1,6 +1,7 @@
 import React from 'react';
 import { Drawer, Tag, Skeleton, Button } from 'antd';
 import type { Store } from '../types/api';
+import { useLanguage } from '../context/LanguageContext';
 
 interface StoreDetailsDrawerProps {
   open: boolean;
@@ -17,9 +18,11 @@ export const StoreDetailsDrawer: React.FC<StoreDetailsDrawerProps> = ({
   isLoading,
   extra
 }) => {
+  const { t } = useLanguage();
+
   return (
     <Drawer
-      title="Bayi Detay Bilgileri"
+      title={t('drawerTitle')}
       placement="right"
       onClose={onClose}
       open={open}
@@ -75,12 +78,12 @@ export const StoreDetailsDrawer: React.FC<StoreDetailsDrawerProps> = ({
                 {store.name}
               </div>
               <Tag color={store.type === 'TIM' ? 'blue' : 'cyan'}>
-                {store.type === 'TIM' ? 'TİM Bayisi' : 'Franchise Acente'}
+                {store.type === 'TIM' ? t('timDealer') : t('franchiseDealer')}
               </Tag>
             </div>
 
             <div className="drawer-detail-section">
-              <div className="drawer-detail-label">Adres</div>
+              <div className="drawer-detail-label">{t('address')}</div>
               <div className="drawer-detail-value">{store.address}</div>
               <div className="drawer-detail-value" style={{ marginTop: '0.25rem', color: 'rgba(0, 0, 0, 0.6)' }}>
                 {store.district}, {store.city}
@@ -88,18 +91,18 @@ export const StoreDetailsDrawer: React.FC<StoreDetailsDrawerProps> = ({
             </div>
 
             <div className="drawer-detail-section">
-              <div className="drawer-detail-label">Telefon</div>
+              <div className="drawer-detail-label">{t('phoneLabel')}</div>
               <div className="drawer-detail-value">{store.phone || 'N/A'}</div>
             </div>
 
             <div className="drawer-detail-section">
-              <div className="drawer-detail-label">Çalışma Saatleri</div>
+              <div className="drawer-detail-label">{t('workingHours')}</div>
               <div className="drawer-detail-value">⏱️ {store.workingHours || '09:00 - 20:00'}</div>
             </div>
 
             <div className="drawer-detail-section">
-              <div className="drawer-detail-label">Uzaklık</div>
-              <div className="drawer-detail-value">📍 {store.distance} km uzakta</div>
+              <div className="drawer-detail-label">{t('distanceLabel')}</div>
+              <div className="drawer-detail-value">📍 {store.distance} {t('distance')}</div>
             </div>
 
             <div className="drawer-detail-section" style={{ marginTop: '1.5rem' }}>
@@ -123,7 +126,7 @@ export const StoreDetailsDrawer: React.FC<StoreDetailsDrawerProps> = ({
                     gap: '0.5rem'
                   }}
                 >
-                  🗺️ Yol Tarifi Al (Google Maps)
+                  {t('getDirections')}
                 </Button>
               </a>
             </div>

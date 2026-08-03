@@ -16,6 +16,7 @@ import {
 } from '../components/LocationSearchFilters';
 import type { Store, CapabilityType, CapabilityTypeOption, StoreCapabilityResult } from '../types/api';
 import { apiService, apiStatus } from '../api/client';
+import { useLanguage } from '../context/LanguageContext';
 import { ISTANBUL_DISTRICT_COORDS } from '../data/istanbulDistricts';
 import './Pages.css';
 
@@ -27,19 +28,8 @@ type FormValues = {
   storeType: 'ALL' | 'TIM' | 'FRANCHISE' | '';
 };
 
-const schema = yup.object().shape({
-  capabilityType: yup.string()
-    .oneOf(['ALL', 'NEW_LINE', 'DEVICE_DELIVERY', 'DEVICE_REPAIR', 'NUMBER_PORT', 'BILL_PAYMENT'])
-    .required('Lütfen bir işlem tipi seçiniz.'),
-  workingHours: yup.string()
-    .oneOf(['ALL', 'WEEKEND', 'LATE_CLOSE'], 'Lütfen çalışma zamanı seçiniz.')
-    .required('Lütfen çalışma zamanı seçiniz.'),
-  storeType: yup.string()
-    .oneOf(['ALL', 'TIM', 'FRANCHISE'], 'Lütfen bayi tipi seçiniz.')
-    .required('Lütfen bayi tipi seçiniz.')
-});
-
 export const Transactions: React.FC = () => {
+  const { t } = useLanguage();
   const [selectedStoreId, setSelectedStoreId] = useState<number | undefined>(undefined);
   const [hoveredStoreId, setHoveredStoreId] = useState<number | undefined>(undefined);
   const [mapCenter, setMapCenter] = useState({ lat: 41.0082, lng: 28.9784 });
@@ -56,6 +46,18 @@ export const Transactions: React.FC = () => {
   const locationRequestId = useRef(0);
 
   const [appliedFilters, setAppliedFilters] = useState<FormValues | null>(null);
+
+  const schema = yup.object().shape({
+    capabilityType: yup.string()
+      .oneOf(['ALL', 'NEW_LINE', 'DEVICE_DELIVERY', 'DEVICE_REPAIR', 'NUMBER_PORT', 'BILL_PAYMENT'])
+      .required(t('selectTxType')),
+    workingHours: yup.string()
+      .oneOf(['ALL', 'WEEKEND', 'LATE_CLOSE'], t('selectWorkingHours'))
+      .required(t('selectWorkingHours')),
+    storeType: yup.string()
+      .oneOf(['ALL', 'TIM', 'FRANCHISE'], t('selectDealerType'))
+      .required(t('selectDealerType'))
+  });
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: yupResolver(schema) as any,
@@ -83,7 +85,7 @@ export const Transactions: React.FC = () => {
     if (mode !== 'current') return;
 
     if (!navigator.geolocation) {
-      setLocationError('Tarayıcınız konum bilgisini desteklemiyor. İlçe seçeneğini kullanabilirsiniz.');
+      setLocationError(t('locatingUnsupported'));
       return;
     }
 
@@ -101,7 +103,7 @@ export const Transactions: React.FC = () => {
       (error) => {
         if (locationRequestId.current !== requestId) return;
         console.warn('Geolocation blocked or failed:', error);
-        setLocationError('Konum izni verilmedi veya konum alınamadı. İlçe seçeneğini kullanabilirsiniz.');
+        setLocationError(t('locationErrorTitle'));
         setIsLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
@@ -236,7 +238,7 @@ export const Transactions: React.FC = () => {
 
   const onFilterSubmit = (values: FormValues) => {
     if (!isLocationReady) {
-      setLocationSelectionError('Lütfen konum yöntemini ve gerekli konum bilgilerini seçiniz.');
+      setLocationSelectionError(t('locationErrorTitle'));
       setAppliedFilters(null);
       return;
     }
@@ -278,15 +280,15 @@ export const Transactions: React.FC = () => {
   return (
     <div className="page-container animate-fade-in">
       <Link to="/" className="back-btn">
-        &larr; Kontrol Paneline Dön
+        {t('backToDashboard')}
       </Link>
 
       <section className="hero-section" style={{ marginBottom: '2rem' }}>
         <h1 className="hero-title" style={{ fontSize: '2.25rem' }}>
-          turkcell.com.tr - Yakınımdaki İşlemler
+          {t('transPageTitle')}
         </h1>
         <p className="hero-subtitle">
-          Belirli hesap veya hat işleminizi destekleyen en yakın Turkcell bayisini bulun.
+          {t('transPageDesc')}
         </p>
       </section>
 
@@ -295,8 +297,8 @@ export const Transactions: React.FC = () => {
         <aside className="locator-sidebar glass-panel">
           {apiStatus.isUsingFallback && (
             <Alert
-              message="Simülasyon Modu Aktif"
-              description="Gerçek API bağlantısı başarısız oldu (CORS veya Ağ Hatası). Sistem otomatik olarak Mock verilerine geçti."
+              message={t('simulationMode')}
+              description={t('fallbackWarning')}
               type="warning"
               showIcon
               style={{ marginBottom: '1.25rem', borderRadius: '8px' }}
@@ -324,11 +326,11 @@ export const Transactions: React.FC = () => {
             />
           )}
 
-          <h3 className="sidebar-title">Filtrele</h3>
+          <h3 className="sidebar-title">{t('searchFiltersTitle')}</h3>
 
           <form onSubmit={handleSubmit(onFilterSubmit)}>
             <div className="filter-group">
-              <label className="filter-label">Hangi işlemi gerçekleştirmek istiyorsunuz?</label>
+              <label className="filter-label">{t('transactionType')}</label>
               <Controller
                 name="capabilityType"
                 control={control}
@@ -336,12 +338,12 @@ export const Transactions: React.FC = () => {
                   <Select 
                     {...field}
                     value={field.value || undefined}
-                    placeholder="-- İşlem Seçiniz --"
+                    placeholder={t('allTxTypes')}
                     allowClear
                     style={{ width: '100%' }}
                     status={errors.capabilityType ? 'error' : ''}
                   >
-                    <Option value="ALL">Tümü</Option>
+                    <Option value="ALL">{t('all')}</Option>
                     {Array.isArray(capabilitiesList) && capabilitiesList.map(cap => (
                       <Option key={cap.key} value={cap.key}>
                         {cap.label}
@@ -358,7 +360,7 @@ export const Transactions: React.FC = () => {
             </div>
 
             <div className="filter-group" style={{ marginTop: '0.75rem' }}>
-              <label className="filter-label">Çalışma Günleri & Saatleri</label>
+              <label className="filter-label">{t('workingHoursFilter')}</label>
               <Controller
                 name="workingHours"
                 control={control}
@@ -366,14 +368,14 @@ export const Transactions: React.FC = () => {
                   <Select
                     {...field}
                     value={field.value || undefined}
-                    placeholder="Çalışma zamanı seçin"
+                    placeholder={t('workingHoursFilter')}
                     allowClear
                     status={errors.workingHours ? 'error' : ''}
                     style={{ width: '100%' }}
                   >
-                    <Option value="ALL">Tümü</Option>
-                    <Option value="WEEKEND">Hafta Sonu Açık (TİM / Bazı Franchise)</Option>
-                    <Option value="LATE_CLOSE">Geç Kapanan (21:00+)</Option>
+                    <Option value="ALL">{t('all')}</Option>
+                    <Option value="WEEKEND">{t('opensWeekend')}</Option>
+                    <Option value="LATE_CLOSE">{t('lateClose')}</Option>
                   </Select>
                 )}
               />
@@ -385,7 +387,7 @@ export const Transactions: React.FC = () => {
             </div>
 
             <div className="filter-group" style={{ marginTop: '0.75rem' }}>
-              <label className="filter-label">Bayi Tipi</label>
+              <label className="filter-label">{t('dealerType')}</label>
               <Controller
                 name="storeType"
                 control={control}
@@ -393,14 +395,14 @@ export const Transactions: React.FC = () => {
                   <Select
                     {...field}
                     value={field.value || undefined}
-                    placeholder="Bayi tipi seçin"
+                    placeholder={t('dealerType')}
                     allowClear
                     status={errors.storeType ? 'error' : ''}
                     style={{ width: '100%' }}
                   >
-                    <Option value="ALL">Tümü</Option>
-                    <Option value="TIM">TİM (Turkcell İletişim Merkezi)</Option>
-                    <Option value="FRANCHISE">Franchise (Acente)</Option>
+                    <Option value="ALL">{t('all')}</Option>
+                    <Option value="TIM">{t('tim')}</Option>
+                    <Option value="FRANCHISE">{t('franchise')}</Option>
                   </Select>
                 )}
               />
@@ -417,25 +419,25 @@ export const Transactions: React.FC = () => {
               loading={isSearching}
               style={{ width: '100%', marginTop: '1.25rem', backgroundColor: 'var(--turkcell-blue)', borderColor: 'var(--turkcell-blue)' }}
             >
-              Bayi Ara
+              {t('searchDealersBtn')}
             </Button>
           </form>
 
           <div className="filter-group" style={{ marginTop: '1.5rem' }}>
             <span className="filter-label">
-              Uygun Bayiler ({eligibleStores.length})
+              {t('eligibleDealers')} ({eligibleStores.length})
             </span>
           </div>
 
           <div className="card-list">
             {!appliedFilters || !isLocationReady ? (
               <Empty
-                description="Filtreleri tamamlayıp Bayi Ara butonuna basın."
+                description={t('searchHint')}
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
               />
             ) : isSearching ? (
               <div style={{ textAlign: 'center', padding: '2.5rem 0' }}>
-                <Spin tip="Uygun bayiler aranıyor..." size="large" />
+                <Spin tip={t('loadingStores')} size="large" />
               </div>
             ) : (Array.isArray(eligibleStores) && eligibleStores.length > 0) ? (
               eligibleStores.map(item => (
@@ -452,9 +454,9 @@ export const Transactions: React.FC = () => {
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
                           {item.type === 'TIM' ? (
-                            <Tag color="blue">TIM</Tag>
+                            <Tag color="blue">{t('tim')}</Tag>
                           ) : (
-                            <Tag color="cyan">Franchise</Tag>
+                            <Tag color="cyan">{t('franchise')}</Tag>
                           )}
                         </div>
                       </div>
@@ -466,9 +468,9 @@ export const Transactions: React.FC = () => {
               <Empty 
                 description={
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Kriterlere Uygun Bayi Bulunamadı</div>
+                    <div style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{t('noDealersFound')}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                      Seçtiğiniz filtreler ve işlem tipine uygun herhangi bir bayi bulunamadı. Lütfen başka filtreleri denemeyi deneyin.
+                      {t('noDealersDesc')}
                     </div>
                   </div>
                 } 
@@ -492,7 +494,7 @@ export const Transactions: React.FC = () => {
             />
           ) : (
             <Empty
-              description="Haritayı görmek için tüm filtreleri seçip Bayi Ara butonuna basınız."
+              description={t('mapHint')}
               image={Empty.PRESENTED_IMAGE_SIMPLE}
               style={{ paddingTop: '8rem' }}
             />

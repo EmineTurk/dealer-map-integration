@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { CircleMarker, MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import type { Store } from '../types/api';
+import { useLanguage } from '../context/LanguageContext';
 
 // Custom Leaflet pins styled dynamically
 const getCustomMapIcon = (isSelected: boolean, isHovered: boolean, stockLevel?: string) => {
@@ -40,17 +41,44 @@ const getCustomMapIcon = (isSelected: boolean, isHovered: boolean, stockLevel?: 
   });
 };
 
-// Helper component to recenter the Leaflet map dynamically
-const RecenterMap: React.FC<{ center: { lat: number; lng: number }; zoom: number }> = ({ center, zoom }) => {
+// Helper component to dynamically adjust map bounds to fit user coordinates and furthest store card
+const FitMapBounds: React.FC<{
+  currentLocation?: { lat: number; lng: number };
+  stores: { latitude: number; longitude: number }[];
+  center: { lat: number; lng: number };
+  zoom: number;
+}> = ({ currentLocation, stores, center, zoom }) => {
   const map = useMap();
+
   useEffect(() => {
-    map.setView([center.lat, center.lng], zoom, { animate: true });
-  }, [center, zoom, map]);
+    if (Array.isArray(stores) && stores.length > 0) {
+      const bounds = L.latLngBounds([]);
+
+      // Include search anchor coordinates
+      if (currentLocation) {
+        bounds.extend([currentLocation.lat, currentLocation.lng]);
+      } else {
+        bounds.extend([center.lat, center.lng]);
+      }
+
+      // Include all stores found
+      stores.forEach(store => {
+        bounds.extend([store.latitude, store.longitude]);
+      });
+
+      // Fit map frame with padding and prevent zooming too close for single/close results
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: true });
+    } else {
+      map.setView([center.lat, center.lng], zoom, { animate: true });
+    }
+  }, [currentLocation, stores, center, zoom, map]);
+
   return null;
 };
 
 const CurrentLocationControl: React.FC<{ location: { lat: number; lng: number } }> = ({ location }) => {
   const map = useMap();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const LocationControl = L.Control.extend({
@@ -58,8 +86,8 @@ const CurrentLocationControl: React.FC<{ location: { lat: number; lng: number } 
       onAdd: () => {
         const button = L.DomUtil.create('button', 'leaflet-bar current-location-control');
         button.type = 'button';
-        button.title = 'Mevcut konumuma git';
-        button.setAttribute('aria-label', 'Mevcut konumuma git');
+        button.title = t('goToCurrentLoc');
+        button.setAttribute('aria-label', t('goToCurrentLoc'));
         button.innerHTML = `
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="4"></circle>
@@ -86,7 +114,7 @@ const CurrentLocationControl: React.FC<{ location: { lat: number; lng: number } 
     return () => {
       map.removeControl(control);
     };
-  }, [location.lat, location.lng, map]);
+  }, [location.lat, location.lng, map, t]);
 
   return null;
 };
@@ -110,6 +138,8 @@ export const StoreMap: React.FC<StoreMapProps> = ({
   hoveredStoreId,
   onStoreSelect
 }) => {
+  const { t } = useLanguage();
+
   return (
     <MapContainer
       center={[center.lat, center.lng]}
@@ -121,7 +151,12 @@ export const StoreMap: React.FC<StoreMapProps> = ({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <RecenterMap center={center} zoom={zoom} />
+      <FitMapBounds
+        currentLocation={currentLocation}
+        stores={stores}
+        center={center}
+        zoom={zoom}
+      />
       {currentLocation && (
         <>
           <CurrentLocationControl location={currentLocation} />
@@ -136,7 +171,7 @@ export const StoreMap: React.FC<StoreMapProps> = ({
             }}
           >
             <Tooltip direction="top" offset={[0, -8]}>
-              Mevcut konumunuz
+              {t('currentLocation')}
             </Tooltip>
           </CircleMarker>
         </>

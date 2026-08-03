@@ -8,6 +8,8 @@
   border-top: none !important;
   border-left: none !important;
   border-right: none !important;
+  background-color: var(--turkcell-blue) !important;
+  box-shadow: 0 4px 20px rgba(0, 45, 114, 0.25);
 }
 
 .navbar-container {
@@ -33,7 +35,7 @@
 }
 
 .brand-divider {
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .brand-portal {
@@ -50,7 +52,7 @@
 .nav-item {
   font-weight: 500;
   font-size: 0.95rem;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.7);
   padding: 0.5rem 1rem;
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
@@ -58,101 +60,38 @@
 
 .nav-item:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .nav-item.active {
   color: var(--text-primary);
-  background: rgba(0, 86, 179, 0.2);
-  border: 1px solid rgba(0, 86, 179, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
-.navbar-status {
+.navbar-lang-container {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.8rem;
+}
+
+.lang-toggle-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--text-primary);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   border-radius: 50px;
   transition: all var(--transition-fast);
+  cursor: pointer;
 }
 
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.status-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-/* Real API (Green) */
-.navbar-status.status-real {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
-.navbar-status.status-real .status-dot {
-  background-color: var(--color-success);
-  animation: statusPulseGreen 2s infinite;
-}
-.navbar-status.status-real .status-label {
-  color: var(--color-success);
-}
-
-/* Fallback API (Yellow) */
-.navbar-status.status-fallback {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.2);
-}
-.navbar-status.status-fallback .status-dot {
-  background-color: var(--turkcell-yellow);
-  animation: statusPulseYellow 2s infinite;
-}
-.navbar-status.status-fallback .status-label {
-  color: var(--turkcell-yellow);
-}
-
-/* API unavailable while mock fallback is disabled (Red) */
-.navbar-status.status-unavailable {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-}
-.navbar-status.status-unavailable .status-dot {
-  background-color: #ef4444;
-}
-.navbar-status.status-unavailable .status-label {
-  color: #ef4444;
-}
-
-@keyframes statusPulseGreen {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-  }
-}
-
-@keyframes statusPulseYellow {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 199, 44, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(255, 199, 44, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 199, 44, 0);
-  }
+.lang-toggle-btn:hover {
+  background: var(--turkcell-yellow);
+  border-color: var(--turkcell-yellow);
+  color: var(--turkcell-blue);
+  box-shadow: 0 0 10px rgba(255, 199, 44, 0.4);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {
@@ -166,7 +105,7 @@
     justify-content: center;
   }
   
-  .navbar-status {
-    display: none;
+  .navbar-lang-container {
+    margin-top: 0.5rem;
   }
 }

@@ -10,11 +10,11 @@
   --turkcell-yellow-hover: #E5B220;
   
   /* Palette & Semantic Colors (Dark Theme Preferred) */
-  --bg-base: #060913;
-  --bg-surface: rgba(13, 20, 38, 0.6);
-  --bg-surface-hover: rgba(22, 33, 62, 0.85);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-color-hover: rgba(255, 255, 255, 0.15);
+  --bg-base: #102244;
+  --bg-surface: rgba(20, 36, 73, 0.6);
+  --bg-surface-hover: rgba(30, 52, 102, 0.8);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-color-hover: rgba(255, 255, 255, 0.2);
   
   --text-primary: #F3F4F6;
   --text-secondary: #9CA3AF;

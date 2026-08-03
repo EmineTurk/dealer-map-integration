@@ -1,34 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { apiStatus } from '../api/client';
+import { useLanguage } from '../context/LanguageContext';
 import './Navbar.css';
 
-type ApiMode = 'real' | 'fallback' | 'unavailable';
-
-const getApiMode = (): ApiMode => {
-  if (apiStatus.isUnavailable) return 'unavailable';
-  if (apiStatus.isUsingFallback) return 'fallback';
-  return 'real';
-};
-
 export const Navbar: React.FC = () => {
-  const [apiMode, setApiMode] = useState<ApiMode>(getApiMode);
+  const { language, setLanguage, t } = useLanguage();
 
-  // Poll the shared API status object so the badge follows request outcomes.
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setApiMode(currentMode => {
-        const nextMode = getApiMode();
-        return currentMode === nextMode ? currentMode : nextMode;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const statusLabels: Record<ApiMode, string> = {
-    real: 'Gerçek API Aktif',
-    fallback: 'Simüle API Aktif',
-    unavailable: 'API Bağlantısı Yok'
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'tr' : 'en');
   };
 
   return (
@@ -37,7 +16,7 @@ export const Navbar: React.FC = () => {
         <NavLink to="/" className="navbar-brand">
           <span className="brand-turkcell">TURKCELL</span>
           <span className="brand-divider">/</span>
-          <span className="brand-portal">Bayi Portalı</span>
+          <span className="brand-portal">{t('brandPortal')}</span>
         </NavLink>
 
         <nav className="navbar-links">
@@ -45,28 +24,26 @@ export const Navbar: React.FC = () => {
             to="/" 
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
-            Kontrol Paneli
+            {t('controlPanel')}
           </NavLink>
           <NavLink 
             to="/pasaj" 
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
-            Pasaj (Stoklar)
+            {t('pasajStocks')}
           </NavLink>
           <NavLink 
             to="/transactions" 
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
-            com.tr (İşlemler)
+            {t('transactions')}
           </NavLink>
         </nav>
 
-        <div
-          className={`navbar-status status-${apiMode}`}
-          title={apiStatus.lastErrorMessage || statusLabels[apiMode]}
-        >
-          <span className="status-dot"></span>
-          <span className="status-label">{statusLabels[apiMode]}</span>
+        <div className="navbar-lang-container">
+          <button onClick={toggleLanguage} className="lang-toggle-btn">
+            {language === 'en' ? 'TR' : 'EN'}
+          </button>
         </div>
       </div>
     </header>

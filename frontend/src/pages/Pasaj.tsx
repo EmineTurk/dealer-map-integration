@@ -13,6 +13,7 @@ import {
 } from '../components/LocationSearchFilters';
 import type { Store, StockLevel, Product } from '../types/api';
 import { apiService, apiStatus } from '../api/client';
+import { useLanguage } from '../context/LanguageContext';
 import { ISTANBUL_DISTRICT_COORDS } from '../data/istanbulDistricts';
 import './Pages.css';
 
@@ -37,6 +38,7 @@ const getProductBrand = (product: Product): string => {
 const { Option } = Select;
 
 export const Pasaj: React.FC = () => {
+  const { t } = useLanguage();
   const [selectedProductId, setSelectedProductId] = useState<number | 'ALL' | undefined>(undefined);
   const [selectedStoreId, setSelectedStoreId] = useState<number | undefined>(undefined);
   const [hoveredStoreId, setHoveredStoreId] = useState<number | undefined>(undefined);
@@ -77,7 +79,7 @@ export const Pasaj: React.FC = () => {
     if (mode !== 'current') return;
 
     if (!navigator.geolocation) {
-      setLocationError('Tarayıcınız konum bilgisini desteklemiyor. İlçe seçeneğini kullanabilirsiniz.');
+      setLocationError(t('locatingUnsupported'));
       return;
     }
 
@@ -95,7 +97,7 @@ export const Pasaj: React.FC = () => {
       (error) => {
         if (locationRequestId.current !== requestId) return;
         console.warn('Geolocation blocked or failed:', error);
-        setLocationError('Konum izni verilmedi veya konum alınamadı. İlçe seçeneğini kullanabilirsiniz.');
+        setLocationError(t('locationErrorTitle'));
         setIsLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
@@ -227,16 +229,16 @@ export const Pasaj: React.FC = () => {
 
   const getStockLabel = (level: StockLevel) => {
     switch (level) {
-      case 'IN_STOCK': return 'Stokta';
-      case 'LOW': return 'Düşük Stok';
-      case 'OUT_OF_STOCK': return 'Stokta Yok';
-      default: return 'Bilinmiyor';
+      case 'IN_STOCK': return t('inStock');
+      case 'LOW': return t('lowStock');
+      case 'OUT_OF_STOCK': return t('outOfStock');
+      default: return 'N/A';
     }
   };
 
   const pasajExtraDetail = selectedStore && (
     <div className="drawer-detail-section" style={{ marginTop: '2rem', borderTop: '1px solid rgba(0, 0, 0, 0.08)', paddingTop: '1.5rem' }}>
-      <div className="drawer-detail-label">Mevcut Stok Durumu</div>
+      <div className="drawer-detail-label">{t('currentStockStatus')}</div>
       <div 
         style={{ 
           display: 'flex', 
@@ -254,15 +256,15 @@ export const Pasaj: React.FC = () => {
   return (
     <div className="page-container animate-fade-in">
       <Link to="/" className="back-btn">
-        &larr; Kontrol Paneline Dön
+        {t('backToDashboard')}
       </Link>
 
       <section className="hero-section" style={{ marginBottom: '2rem' }}>
         <h1 className="hero-title" style={{ fontSize: '2.25rem' }}>
-          Pasaj - Yakınımdaki Cihaz Stokları
+          {t('pasajPageTitle')}
         </h1>
         <p className="hero-subtitle">
-          Hangi Turkcell fiziksel mağazasında aradığınız ürünün stokta olduğunu bulun.
+          {t('pasajPageDesc')}
         </p>
       </section>
 
@@ -271,8 +273,8 @@ export const Pasaj: React.FC = () => {
         <aside className="locator-sidebar glass-panel">
           {apiStatus.isUsingFallback && (
             <Alert
-              message="Simülasyon Modu Aktif"
-              description="Gerçek API bağlantısı başarısız oldu (CORS veya Ağ Hatası). Sistem otomatik olarak Mock verilerine geçti."
+              message={t('simulationMode')}
+              description={t('fallbackWarning')}
               type="warning"
               showIcon
               style={{ marginBottom: '1.25rem', borderRadius: '8px' }}
@@ -291,14 +293,14 @@ export const Pasaj: React.FC = () => {
             onRadiusChange={setSearchRadius}
           />
 
-          <h3 className="sidebar-title">Ürün Kataloğu</h3>
+          <h3 className="sidebar-title">{t('productCatalog')}</h3>
           
           <div className="filter-group">
-            <label className="filter-label">Kategori</label>
+            <label className="filter-label">{t('category')}</label>
             <Select 
               value={selectedCategory} 
               style={{ width: '100%' }} 
-              placeholder="Kategori seçiniz"
+              placeholder={t('allCategories')}
               allowClear
               onChange={(val) => {
                 setSelectedCategory(val);
@@ -306,17 +308,17 @@ export const Pasaj: React.FC = () => {
               }}
             >
               {categories.map(cat => (
-                <Option key={cat} value={cat}>{cat === 'ALL' ? 'Tümü' : cat}</Option>
+                <Option key={cat} value={cat}>{cat === 'ALL' ? t('all') : cat}</Option>
               ))}
             </Select>
           </div>
 
           <div className="filter-group" style={{ marginTop: '0.75rem' }}>
-            <label className="filter-label">Marka</label>
+            <label className="filter-label">{t('brand')}</label>
             <Select 
               value={selectedBrand} 
               style={{ width: '100%' }} 
-              placeholder="Marka seçiniz"
+              placeholder={t('allBrands')}
               allowClear
               onChange={(val) => {
                 setSelectedBrand(val);
@@ -324,22 +326,22 @@ export const Pasaj: React.FC = () => {
               }}
             >
               {brands.map(brand => (
-                <Option key={brand} value={brand}>{brand === 'ALL' ? 'Tümü' : brand}</Option>
+                <Option key={brand} value={brand}>{brand === 'ALL' ? t('all') : brand}</Option>
               ))}
             </Select>
           </div>
 
           <div className="filter-group" style={{ marginTop: '0.75rem' }}>
-            <label className="filter-label">Ürün</label>
+            <label className="filter-label">{t('product')}</label>
             <Select 
               value={selectedProductId} 
               style={{ width: '100%' }} 
-              placeholder="Ürün seçiniz"
+              placeholder={t('allProducts')}
               allowClear
               onChange={(val) => setSelectedProductId(val)}
               disabled={filteredProducts.length === 0}
             >
-              <Option value="ALL">Tümü</Option>
+              <Option value="ALL">{t('all')}</Option>
               {filteredProducts.map(product => (
                 <Option key={product.id} value={product.id}>
                   {product.name}
@@ -350,19 +352,19 @@ export const Pasaj: React.FC = () => {
 
           <div className="filter-group" style={{ marginTop: '1rem' }}>
             <span className="filter-label">
-              Bu Ürünü Satan Bayiler ({storeStocksList.length})
+              {t('dealersSellingThisProduct')} ({storeStocksList.length})
             </span>
           </div>
 
           <div className="card-list">
             {!isSearchReady ? (
               <Empty
-                description="Bayi aramak için tüm filtreleri ve konum bilgilerini seçin."
+                description={t('searchHint')}
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
               />
             ) : isStoreLoading ? (
               <div style={{ textAlign: 'center', padding: '2.5rem 0' }}>
-                <Spin tip="Stoktaki mağazalar yükleniyor..." size="large" />
+                <Spin tip={t('loadingStores')} size="large" />
               </div>
             ) : storeStocksList.length > 0 ? (
               storeStocksList.map(item => (
@@ -381,9 +383,9 @@ export const Pasaj: React.FC = () => {
                           {getStockLabel(item.stockLevel)}
                         </Tag>
                         {item.type === 'TIM' ? (
-                          <Badge className="store-type-badge" status="processing" text="TIM" />
+                          <Badge className="store-type-badge" status="processing" text={t('tim')} />
                         ) : (
-                          <Badge className="store-type-badge" status="processing" text="Franchise" />
+                          <Badge className="store-type-badge" status="processing" text={t('franchise')} />
                         )}
                       </div>
                     }
@@ -394,9 +396,9 @@ export const Pasaj: React.FC = () => {
               <Empty 
                 description={
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Stokta Ürün Bulunamadı</div>
+                    <div style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{t('noDealersFound')}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                      Seçtiğiniz ürün yakınlardaki hiçbir bayide mevcut değil. Lütfen başka bir aramayı deneyin.
+                      {t('noDealersDesc')}
                     </div>
                   </div>
                 } 
@@ -420,7 +422,7 @@ export const Pasaj: React.FC = () => {
             />
           ) : (
             <Empty
-              description="Haritayı görmek için tüm filtreleri seçiniz."
+              description={t('mapHint')}
               image={Empty.PRESENTED_IMAGE_SIMPLE}
               style={{ paddingTop: '8rem' }}
             />
