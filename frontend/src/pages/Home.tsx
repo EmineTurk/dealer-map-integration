@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import emocanImg from '../assets/emocan.png';
 import './Pages.css';
 
 const PasajIcon = () => (
@@ -23,24 +24,15 @@ const TurkcellIcon = () => (
 
 const WavingMascot = () => (
   <div className="mascot-container">
-    <svg width="120" height="120" viewBox="0 0 18.031 18.031" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible' }}>
-      {/* Floating Mascot Group */}
-      <g className="mascot-head">
-        {/* Yellow mascot body/head (official emblem silhouette) */}
-        <path d="M9.0155 0C4.0356 0 0 4.03 0 9c0 .119.0042.2387.0099.3584.8696-1.697 2.5913-3.649 5.0369-4.827-.0042-.0543-.0092-.1106-.0092-.1677 0-1.1442.9288-2.0716 2.076-2.0716 1.1456 0 2.0744.9274 2.0744 2.0716 0 1.1443-.9288 2.071-2.0745 2.071-.6746 0-1.2731-.3232-1.652-.8218-2.5385 1.4964-3.8546 4.5652-4.0377 8.2374a8.979 8.979 0 001.7365 1.9858c1.4738-3.5004 3.935-6.001 8.6958-7.5572-.0007-.0281-.0042-.0542-.0042-.0824 0-1.1435.9288-2.071 2.0745-2.071 1.1464 0 2.0752.9282 2.0752 2.071 0 1.1443-.9288 2.071-2.0752 2.071-.6866 0-1.2936-.333-1.671-.8478-3.6779 1.6907-6.022 5.4784-6.127 8.1036a8.9882 8.9882 0 002.8885.4746c4.9799 0 9.0155-4.0272 9.0155-8.9993C18.031 4.03 13.996 0 9.0154 0z" fill="var(--turkcell-yellow)"/>
-        {/* Cute Face Elements overlayed centered on the head */}
-        <circle cx="8" cy="8.5" r="0.75" fill="#002D72" />
-        <circle cx="11.5" cy="8.5" r="0.75" fill="#002D72" />
-        <circle cx="6.8" cy="9.4" r="0.75" fill="#EF4444" opacity="0.4" />
-        <circle cx="12.7" cy="9.4" r="0.75" fill="#EF4444" opacity="0.4" />
-        <path d="M 8.8 10 Q 9.75 11, 10.7 10" stroke="#002D72" strokeWidth="0.5" strokeLinecap="round" fill="none" />
-      </g>
-      {/* Waving arm attached on the right side, pivoting at shoulder */}
-      <g className="mascot-arm">
-        <path d="M 14.5 11.5 C 16.5 10.5, 17.5 8.5, 17 7" stroke="var(--turkcell-yellow)" strokeWidth="1.2" strokeLinecap="round" />
-        <circle cx="17" cy="7" r="0.8" fill="var(--turkcell-yellow)"/>
-      </g>
-    </svg>
+    <div className="emocan-wrapper">
+      <img src={emocanImg} alt="Turkcell Emocan" className="emocan-img" />
+      <svg className="emocan-waving-hand" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Sleeve (dark navy blue) */}
+        <path d="M 5 35 L 25 20" stroke="#122752" strokeWidth="11" strokeLinecap="round" />
+        {/* Hand (yellow) */}
+        <path d="M 25 20 L 35 12" stroke="var(--turkcell-yellow)" strokeWidth="11" strokeLinecap="round" />
+      </svg>
+    </div>
   </div>
 );
 

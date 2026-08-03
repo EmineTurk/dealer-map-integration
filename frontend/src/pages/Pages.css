@@ -558,28 +558,42 @@
 .mascot-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   perspective: 1000px;
 }
 
-.mascot-head {
-  animation: mascot-hover 3.5s infinite ease-in-out;
-  transform-origin: 9px 9px;
+.emocan-wrapper {
+  position: relative;
+  display: inline-block;
 }
 
-.mascot-arm {
-  animation: mascot-wave 1.6s infinite ease-in-out;
-  transform-origin: 14.5px 11.5px;
+.emocan-img {
+  width: 140px;
+  height: auto;
+  display: block;
+  animation: emocan-float 3s infinite ease-in-out;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
 }
 
-@keyframes mascot-hover {
+.emocan-waving-hand {
+  position: absolute;
+  top: 72px;
+  right: -5px;
+  width: 45px;
+  height: 45px;
+  transform-origin: 5px 35px;
+  animation: emocan-wave 1.5s infinite ease-in-out;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+
+@keyframes emocan-float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-6px) rotate(3deg); }
+  50% { transform: translateY(-6px) rotate(2deg); }
 }
 
-@keyframes mascot-wave {
+@keyframes emocan-wave {
   0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-25deg); }
+  50% { transform: rotate(-35deg); }
 }
 
 /* Card Glow Hover Animations */
