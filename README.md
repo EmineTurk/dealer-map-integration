@@ -1,86 +1,170 @@
 # Bayi Harita Entegrasyonu
 
-## Proje Özeti
+Pasaj (**Yakınımda Stokta**) ve turkcell.com.tr (**Yakınımda İşlem**) için ortak microservice altyapısı: harita üzerinde stok ve işlem yetkinliği.
 
-İki ayrı ürün, tek ortak altyapı mantığı:
+| Modül | Sorumlu | Açıklama |
+|-------|---------|----------|
+| Pasaj — Yakınımda Stokta | Backend A | Ürünün hangi bayide stokta olduğu |
+| com.tr — Yakınımda İşlem | Backend B | Seçilen işlemi yapabilen en yakın bayiler |
+| React uygulaması | Frontend | Her iki modül tek UI |
 
-- **Pasaj - "Yakınımda Stokta":** Kullanıcı bir ürünün hangi bayide stokta olduğunu harita üzerinde görür. (Backend Stajyer A)
-- **turkcell.com.tr - "Yakınımda İşlem":** Kullanıcı yapmak istediği işlemi (yeni hat, cihaz teslim, numara taşıma vb.) seçer, o işlemi yapabilen en yakın bayiyi haritada görür. (Backend Stajyer B)
-- **Frontend:** Her iki modülü de içeren tek bir React uygulaması. (Frontend Stajyer)
---- 
-## Project Structure
+API sözleşmesi: [`docs/api-contract.md`](docs/api-contract.md)
 
-```txt
-dealer-map-integration
-├── docker-compose.yml   (tüm sistem)
-├── docker/oracle/init   (shared Oracle users)
-├── api-gateway          (port 8085 — ortak API Gateway)
-├── stock-service        (container port 8080 — Pasaj / Backend A)
-├── store-service        (port 8081 — Bayi master data / Backend B)
-├── capability-service   (port 8082 — İşlem yetkinliği / Backend B)
-├── frontend
-└── docs
+---
+
+## Mimari
+
+```
+React (:8080) ──▶ API Gateway (:8085)
+                      │
+        ┌─────────────┼─────────────┐
+        ▼             ▼             ▼
+  stock-service  store-service  capability-service
+   (Pasaj / A)    (ortak / B)     (com.tr / B)
+        │             │             │
+        └─────────────┴─────────────┘
+                 Oracle + Redis
 ```
 
-## Tek Komutla Çalıştırma
+`store-service` bayi master data’nın tek kaynağıdır. `stock-service` ve `capability-service` yalnızca `storeId` tutar; detay için store-service’e sorar.
 
-Docker Desktop çalışırken proje kökünde:
+---
+
+## Proje yapısı
+
+```text
+dealer-map-integration/
+├── docker-compose.yml      # Tüm sistemi tek komutla ayağa kaldırır
+├── .env.example            # Ortam değişkeni şablonu
+├── docker/oracle/init/     # Ortak Oracle kullanıcıları
+├── api-gateway/            # :8085
+├── stock-service/          # Backend A (host :8083 → container :8080)
+├── store-service/          # Backend B — bayi master data (:8081)
+├── capability-service/     # Backend B — işlem yetkinliği (:8082)
+├── frontend/               # React + Nginx (:8080)
+└── docs/                   # API contract, günlükler
+```
+
+---
+
+## Hızlı başlangıç (Docker)
+
+**Gereksinim:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) açık olsun.
 
 ```bash
+# 1) Ortam dosyası (opsiyonel — compose içinde varsayılanlar da var)
+cp .env.example .env
+
+# 2) Tüm sistemi build + başlat (Oracle ilk seferde birkaç dakika sürebilir)
 docker compose up -d --build --wait
-```
 
-Container durumlarını görmek için:
-
-```bash
+# 3) Durum
 docker compose ps
 ```
 
-Sistemi durdurmak için:
+Durdurma:
 
 ```bash
-docker compose down
+docker compose down          # veriler kalır
+docker compose down -v       # Oracle/Redis volume'ları da silinir (sıfırdan init)
 ```
 
-- Frontend: http://localhost:8080
-- API Gateway health: http://localhost:8085/actuator/health
-- Stock service: http://localhost:8083
-- Store service: http://localhost:8081
-- Capability service: http://localhost:8082
-- Oracle container: `turkcell-oracle`
-- Oracle port/service: `1521` / `FREEPDB1`
-- Store schema: `store_app` / `StoreApp123`
-- Stock schema: `stock_app` / `StockApp123`
-- Redis container/port: `turkcell-redis` / `6379`
-- Oracle init: `docker/oracle/init/`, `store-service/sql/`, `stock-service/sql/`
-- API contract: [`docs/api-contract.md`](docs/api-contract.md)
+Başlatma sırası healthcheck ile yönetilir:
 
-Compose; Oracle → Redis → Store → Stock/Capability → Gateway → Frontend
-başlatma sırasını healthcheck ve `depends_on` koşullarıyla yönetir. Frontend
-istekleri Nginx üzerinden Compose ağındaki API Gateway'e aktarılır.
+`Oracle → Redis → store-service → stock / capability → gateway → frontend`
 
-`docker compose down` veritabanı verisini silmez. Oracle ve Redis volume'larını
-da silmek isterseniz ayrıca `--volumes` gerekir; mevcut veriyi korumak için bu
-seçeneği normal kullanımda eklemeyin.
+---
 
-## Local Development
+## Adresler
 
-Java 21 is required for all backend services. Every Maven module enforces this
-version so an unsupported JDK fails at the start of the build.
+| Servis | URL |
+|--------|-----|
+| Frontend | http://localhost:8080 |
+| API Gateway (health) | http://localhost:8085/actuator/health |
+| Store API / Swagger | http://localhost:8081 · [Swagger](http://localhost:8081/swagger-ui.html) |
+| Capability API / Swagger | http://localhost:8082 · [Swagger](http://localhost:8082/swagger-ui.html) |
+| Stock API | http://localhost:8083 |
+| Oracle | `localhost:1521` / `FREEPDB1` |
+| Redis | `localhost:6379` |
 
-On Windows, each `mvnw.cmd` automatically selects an IntelliJ-installed
-`%USERPROFILE%\.jdks\corretto-21*` JDK before starting Maven. If Java 21 is
-installed elsewhere, set `DEALER_MAP_JAVA_HOME` to that JDK directory.
+Gateway üzerinden örnek istekler:
 
-## Backend B (store + capability)
+```http
+GET http://localhost:8085/api/stores?city=Istanbul
+GET http://localhost:8085/api/pasaj/products
+GET http://localhost:8085/api/comtr/capabilities/types
+GET http://localhost:8085/api/comtr/capabilities/DEVICE_REPAIR/stores?lat=41.02&lng=29.01&radius=10
+```
+
+> Kök URL’ler (`http://localhost:8081/` vb.) 404 döner; bunlar API servisidir. UI için **8080**, deneme için Swagger veya Gateway path’lerini kullanın.
+
+---
+
+## Ortam değişkenleri
+
+Şablon: [`.env.example`](.env.example) → kopyala: `.env` (gitignore’da).
+
+| Değişken | Varsayılan | Not |
+|----------|------------|-----|
+| `ORACLE_PASSWORD` | `OraclePassword123` | SYS / container |
+| `STORE_DB_USERNAME` / `PASSWORD` | `store_app` / `StoreApp123` | Store + capability şeması |
+| `STOCK_DB_USERNAME` / `PASSWORD` | `stock_app` / `StockApp123` | Stock şeması |
+| `VITE_ENABLE_MOCK_FALLBACK` | `false` | Frontend build arg |
+
+Compose içinde container’lar birbirini servis adıyla bulur (`oracle`, `redis`, `store-service`). `.env` içindeki `localhost` değerleri özellikle **IDE / lokal Maven** koşuları içindir.
+
+---
+
+## Lokal geliştirme (Maven)
+
+Tüm backend servisleri **Java 21** ister. Windows’ta `mvnw.cmd`, IntelliJ Corretto 21 kurulumunu (`%USERPROFILE%\.jdks\corretto-21*`) otomatik seçebilir. Farklı bir JDK kullanıyorsanız:
 
 ```bash
-# Terminal 1
-cd store-service && mvnw.cmd spring-boot:run
+# PowerShell örneği
+$env:DEALER_MAP_JAVA_HOME = "C:\path\to\jdk-21"
+```
 
-# Terminal 2 (store-service ayaktayken)
+Oracle ve Redis’in ayakta olması gerekir (`docker compose up -d oracle redis` yeterli olabilir).
+
+### Backend B
+
+```bash
+cd store-service && mvnw.cmd spring-boot:run
 cd capability-service && mvnw.cmd spring-boot:run
 ```
 
-- Store Swagger: http://localhost:8081/swagger-ui.html
-- Capability Swagger: http://localhost:8082/swagger-ui.html
+Capability, store’a `STORE_SERVICE_BASE_URL` (varsayılan `http://localhost:8081`) ile bağlanır.
+
+### Backend A
+
+```bash
+cd stock-service && mvnw.cmd spring-boot:run
+```
+
+### Gateway
+
+```bash
+cd api-gateway && mvnw.cmd spring-boot:run
+```
+
+## Sorumluluklar
+
+| Servis | Port | Sahip | Görev |
+|--------|------|-------|-------|
+| `store-service` | 8081 | Backend B | Bayi kim / nerede (master data) |
+| `capability-service` | 8082 | Backend B | İşlem yetkinliği + geo filtre |
+| `stock-service` | 8083 | Backend A | Ürün + stok + geo |
+| `api-gateway` | 8085 | Ortak | Route, CORS, rate limit |
+| `frontend` | 8080 | Frontend | Harita UI |
+
+---
+
+## Dokümanlar
+
+| Dosya | İçerik |
+|-------|--------|
+| [`docs/api-contract.md`](docs/api-contract.md) | Ortak API sözleşmesi |
+| [`docs/dailies/`](docs/dailies/) | Günlük raporlar (A / B / …) |
+
+
+
