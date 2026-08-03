@@ -5,12 +5,13 @@ import './Pages.css';
 
 const PasajIcon = () => (
   <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '1rem' }}>
-    {/* Handle */}
-    <path d="M25 21C25 15 28 12 32 12C36 12 39 15 39 21" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round"/>
-    {/* Outer bag wrapper */}
-    <path d="M24 23.5C18 26.5 15 33 15 41C15 50.5 22.5 58 32 58C41.5 58 49 50.5 49 41C49 33 46 26.5 40 23.5" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
-    {/* Inner P shape */}
-    <path d="M28 46V30H36C41 30 41 38 36 38H28" stroke="var(--turkcell-yellow)" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+    {/* Top Handle */}
+    <path d="M26 21C26 15.5 38 15.5 38 21" stroke="var(--turkcell-yellow)" strokeWidth="4.5" strokeLinecap="round"/>
+    {/* Outer Bag Body */}
+    <path d="M26 24C19 24 16 29 16 38V44C16 52 23 58 32 58C41 58 48 52 48 44V38C48 29 41 24 38 24" stroke="var(--turkcell-yellow)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round"/>
+    {/* Inner P (Stem & Loop) */}
+    <path d="M26 24V48" stroke="var(--turkcell-yellow)" strokeWidth="4.5" strokeLinecap="round"/>
+    <path d="M26 24H36C41 24 41 36 36 36H26" stroke="var(--turkcell-yellow)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
