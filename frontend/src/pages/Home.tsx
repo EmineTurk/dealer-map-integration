@@ -22,20 +22,82 @@ const TurkcellIcon = () => (
   </svg>
 );
 
-const WavingMascot = () => (
-  <div className="mascot-container">
-    <div className="emocan-wrapper">
-      <video
-        src={emocanVideo}
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="emocan-video"
-      />
+const WavingMascot = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animFrameId: number;
+
+    const processFrame = () => {
+      if (video.paused || video.ended) return;
+
+      canvas.width = video.videoWidth || 320;
+      canvas.height = video.videoHeight || 320;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Read pixel data and remove background
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      // Sample top-left corner pixel as background color reference
+      const bgR = data[0];
+      const bgG = data[1];
+      const bgB = data[2];
+
+      const threshold = 40; // color tolerance
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        const diff = Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB);
+        if (diff < threshold) {
+          data[i + 3] = 0; // Make pixel transparent
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      animFrameId = requestAnimationFrame(processFrame);
+    };
+
+    video.addEventListener('play', processFrame);
+    video.play().catch(() => {});
+
+    return () => {
+      cancelAnimationFrame(animFrameId);
+      video.removeEventListener('play', processFrame);
+    };
+  }, []);
+
+  return (
+    <div className="mascot-container">
+      <div className="emocan-wrapper">
+        {/* Hidden video source */}
+        <video
+          ref={videoRef}
+          src={emocanVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{ display: 'none' }}
+        />
+        {/* Canvas renders frames with background removed */}
+        <canvas ref={canvasRef} className="emocan-video" />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const AnimatedCounter: React.FC<{ target: number; isVisible: boolean }> = ({ target, isVisible }) => {
   const [count, setCount] = useState(0);

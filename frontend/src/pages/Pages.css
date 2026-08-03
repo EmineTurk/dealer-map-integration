@@ -571,10 +571,8 @@
   width: 160px;
   height: auto;
   display: block;
-  border-radius: 16px;
-  mix-blend-mode: multiply; /* Removes light backgrounds and blends seamlessly with site background */
-  filter: contrast(105%) brightness(102%) drop-shadow(0 8px 25px rgba(0, 86, 179, 0.35));
   pointer-events: none;
+  filter: drop-shadow(0 8px 25px rgba(0, 86, 179, 0.3));
 }
 
 /* Card Glow Hover Animations */
